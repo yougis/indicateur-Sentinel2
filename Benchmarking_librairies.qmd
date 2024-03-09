@@ -1,0 +1,399 @@
+---
+title: "Benchmarking des librairies disponibles pour le Contrôle Qualité des surfaces brûlées : PYSTAC - SISPPEO - GEE"
+format: 
+  html:
+    code-fold: true
+jupyter: python3
+---
+# Introduction
+
+Dans le cadre du contrôle qualité des surfaces brûlées obtenues par la chaîne des feux de l'OEIL, traitée par Insight, la recherche d'outils pour le calcul d'indicateurs pertinents afin de qualifier les surfaces détectées a amené APID à comparer trois possibilités :
+- La spécification STAC et les outils de gestion des données STAC en Python (PYSTAC et STACKSTAC) ;
+- La librairie SISPPEO ;
+- L'outil Google Earth Engine.
+
+L'objectif de cette étude était de valider la faisabilité de bancarisation des données avec les différents outils, la facilité de traitement et d'évaluer les workflows respectifs.
+
+Sur une des méthodes pré-identifiées a été réalisé une preuve de concept (PoC) détaillée. Le code de cette preuve de concept sur PYSTAC et la spécification STAC est joint au présent rapport sur le benchmarking.
+
+Sur les deux autres outils, les avantages et inconvénients sont exposés ainsi que le temps de réalisation des adaptations nécessaires pour répondre à la problématique de caractérisation des surfaces brûlées détectées et de contrôle qualité.
+
+# Benchmarking
+
+## PYSTAC et la spécification STAC
+
+### Introduction à STAC
+
+La spécification SpatioTemporal Asset Catalog est un standard, un langage unifié pour décrire les données géospatiales, ce qui permet des recherches et des requêtes sur ces données geospatiales facilitées.
+
+En pratique, STAC est un réseau de fichiers JSON qui font références les uns aux autres, avec chaque fichier JSON qui se plie à un ensemble déterminé de spécifications en fonction de l'objet STAC qui est décrit.
+
+Tout d'abord définissons ce qu'est un asset spatio-temporel :
+
+Un `SpatioTemporal Asset` est tout fichier qui représente de l'information à propos de la planète Terre, information saisie à une certaine place et à un instant donné. Par exemple toute donné spatio-temporelle qui provient d'imagerie (satellite, avion, drones), du Synthetic Aperture Radar, des nuages de points (LIDAR, SLAM), des cubes de données et des vidéos full-motion.
+
+L'idée clef est que le GeoJSON n'est pas l'objet d'étude, mais plutôt le fichier de références qui sert comme index aux assets STAC.
+
+### Composants STAC
+
+La spécification STAC comporte trois composants essentiels :
+
+1. Item
+2. Catalogue
+3. Collection
+
+Chaque composant est autonome mais ils fonctionnent mieux de concert.
+
+#### STAC Item
+
+Un Item STAC est la brique fondamentale de la spécification STAC. C'est une fonctionnalité GeoJSON complétée par des métadonnées additionnelles, lesquelles permettent aux clients (ceux qui recherchent et requêtent les données) de parcourir les catalogues. Comme un Item STAC est un GeoJSON, tout SIG moderne ou librairie geospatiale peut le lire. 
+
+Une pratique commune dans l'utilisation de la spécification STAC pour l'imagerie est de définir un Asset STAC pour chaque bande d'une scène et qu'il y ait un seul Item STAC pour représenter toutes les bandes dans une seule scène.
+
+Voici les champs GeoJSON d'un Item STAC JSON :
+
+![Les champs d'un STAC Item](STAC-Item.jpeg)
+
+Les infomations détaillées à propos de ces champs peuvent être trouvés [dans le tableau suivant](https://github.com/radiantearth/stac-spec/blob/master/item-spec/item-spec.md#item-fields).
+
+#### STAC Catalogue
+
+Un catalogue est généralement le point de départ pour naviguer dans un réseau STAC. Un fichier `catalog.json`contient les liens vers une combinaison d'autres Catalogues STAC, de Collections et/ou d'Items STAC.
+
+On peut le penser comme une arborescence de dossiers dans un ordinateur.
+
+Il n'y a pas de restrictions sur la manière dont un STAC Catalogue est organisé. Voici les champs d'un STAC Catalogue JSON :
+
+![Les champs d'un STAC Catalogue](STAC-Catalog.jpeg)
+
+Les infomations détaillées à propos de ces champs peuvent être trouvés [dans le tableau suivant](https://github.com/radiantearth/stac-spec/blob/master/catalog-spec/catalog-spec.md#catalog-fields).
+
+#### STAC Collection
+
+Une Collection STAC est construite sur la spécification STAC Catalogue pour inclure des métadonnées additionnelles sur un ensemble d'items qui font partie de la collection.
+
+![Les champs d'une Collection STAC](STAC-Collection.png)
+
+### Chercher un catalogue STAC
+
+On va requêter un endpoint STAC API avec Python en utilisant la librairie `pystac_client`. Les images Sentinel-2 sont stockées en Cloud Oprimized Geotiff (COG) et disponibles sur [AWS](https://registry.opendata.aws/sentinel-2-l2a-cogs/), [AZURE](https://planetarycomputer.microsoft.com/dataset/sentinel-2-l2a), [GCP](https://cloud.google.com/storage/docs/public-datasets/sentinel-2) et [COPERNICUS](https://scihub.copernicus.eu/).
+
+Les catalogues STAC représentent parfois quelques problèmes. Certains sont incomplets et déclenchent une erreur lors de la récupération des scènes Sentinel-2. D'autres sont complets mais nécessitent un accès avec "credentials". Et donc un compte utilisateur parfois payant.
+
+Nous avons pour le moment travaillé avec le catalogue STAC d'AWS et avons rencontré certains problèmes notamment sur la bande de Classification de Scène (SCL) des produits L2A de Sentinel-2.
+
+### Test de STAC
+
+Nous avons réalisé des tests pour le benchmarking de nos librairies. Le test de STAC est concluant. La réalisation d'une collecte d'indices grâce à pystac_client et stackstac est faisable plutôt simplement.
+
+Les snippets de code suivants le réalise.
+
+```{python}
+"""
+! pip install pystac_client
+! pip install stackstac
+! pip install geopandas
+! pip install rioxarray
+! pip install rasterio
+! pip install netCDF4
+"""
+```
+
+```{python}
+from pystac_client import Client as psc
+import stackstac
+import matplotlib.pyplot as plt
+import geopandas as gpd
+import pandas as pd
+import datetime
+import numpy
+
+import rioxarray
+import rasterio.features
+import xarray
+from shapely.geometry import mapping
+from pyproj import CRS
+```
+
+On va aller chercher les tuiles qui appartiennent à la collection `sentinel-2-l2a`, soit des réflectances de surface corrigées des effets atmosphériques. De même on définit nos CRS de travail.
+
+```{python}
+api_url = "https://earth-search.aws.element84.com/v1"
+
+collection = "sentinel-2-l2a"
+
+crs_rgnc = CRS.from_epsg(3163)
+crs_4326 = CRS.from_epsg(4326)
+```
+
+On va aussi charger les géométries qui nous intéressent, les surfaces brûlées détectées par la chaîne des feux, sur les mois de septembre et octobre 2023.
+Le chemin d'accès pour les test était un chemin d'accès local. Cependant pour travailler proporement il sera nécessaire d'utiliser intake et dotenv :
+- Intake permettra d'ouvrir le catalogue des géométries en se connectant à la base de données postgres de l'OEIL.
+- Dotenv permettra de gérer proprement les credentials et les chemins d'accès.
+
+```{python}
+local_path_to_BA = r"C:\Users\Administrateur\OneDrive\Documents\APID\CLIENTS\OEIL\SISSPEO\datas\sentinel_surfaces_detectees_sept_oct_2023.gpkg"
+BurnedArea_data = gpd.read_file(local_path_to_BA)
+
+
+def preprocess_geometries_df(gdf):
+  """
+  On rajoute une colonne date_ au format datetime et on passe de multipolygones à polygon
+  On récupère la liste de dates des geométries de surfaces brûlées avec un intervalle de temps
+  de 120 jours avant la première détection de surface brûlée et le geodataframe corrigé (passé de multipolygones à polygones)
+  """
+  gdf['date_']= pd.to_datetime(gdf['date'], format='%Y-%m-%d').dt.date
+  gdf = gdf.explode()
+  datemin = (min(gdf['date_']) - datetime.timedelta(days=120)).strftime('%Y-%m-%d') 
+  datemax = max(gdf['date_']).strftime('%Y-%m-%d')
+  dates = f"{datemin}/{datemax}"
+  print(f"Interval temporel {dates}")
+  return (gdf, dates)
+
+```
+
+Nous avons une liste de polygones fournie par l'OEIL qui ont déjà été caractérisés par photointerprétation que nous allons utiliser pour effectuer des tests. Nous définissons les les dictionnaires de géométries à partir de cette liste de polygones.
+
+```{python}
+surfaces_id = {
+    "burned" : [358032, 358018, 358010, 359919, 359594, 359614, 358008, 359524, 359592, 359944],
+    "unburned"  : [357997, 358001, 358002, 358017, 358012, 359543, 359788, 359498, 359545, 360203],
+    "doubt": [358026, 358033,359595, 359964, 362134, 362171, 362192, 362851, 360718, 359666]
+}
+
+df_burned = BurnedArea_data[BurnedArea_data['surface_id'].isin(surfaces_id["burned"])]
+df_unburned = BurnedArea_data[BurnedArea_data['surface_id'].isin(surfaces_id["unburned"])]
+df_doubt = BurnedArea_data[BurnedArea_data['surface_id'].isin(surfaces_id["doubt"])]
+
+dict_burned = {i : j for i,j in zip(df_burned['surface_id'].to_list(), df_burned['geometry'].to_list())}
+dict_unburned = {i : j for i,j in zip(df_unburned['surface_id'].to_list(), df_unburned['geometry'].to_list())}
+dict_doubt = {i : j for i,j in zip(df_doubt['surface_id'].to_list(), df_doubt['geometry'].to_list())}
+```
+
+Nous allons maintenant pouvoir faire les tests sur chaque surfaces brûlées. Pour cela nous commencons par récupérer la bounding box du geodataframe filtré sur une géométrie. Nous récupérons les scènes Sentinel-2 L2A ayant moins d'un certain couvert nuageux (cc pour cloud cover) grâce à pystac_client. Et nous en concevont une stack dont nous vérifions le crs.
+
+```{python}
+def construct_stack(gdf_filtrer, cc, URL, collection, dates):
+  """
+  Fonction de construction de la stack à partir d'un geodataframe filtré sur une surface brûlée.
+  """
+  bbox = gdf_filtrer["geometry"].to_crs(4326).total_bounds
+  print(f'Emprise spatiale de la géométrie sélectionnée : {bbox}')
+  client = psc.open(URL)
+  search = client.search(
+   
+    collections=[collection],
+    bbox=bbox,
+    datetime=dates,
+    query={"eo:cloud_cover": {"lt": cc}}
+
+    )
+  
+  print(f"{search.matched()} scenes Sentinel-2 L2A trouvées dans l'interval temporel ayant - de {cc}% de couverture nuageuse")
+  items = search.item_collection()
+  stack = stackstac.stack(
+    items,
+    bounds_latlon=[bbox[0], bbox[1],  bbox[2],  bbox[3]],
+
+    gdal_env=stackstac.DEFAULT_GDAL_ENV.updated(
+      {'GDAL_HTTP_MAX_RETRY': 3,
+      'GDAL_HTTP_RETRY_DELAY': 5,
+      }),
+    epsg=4326
+    ).rename({'x': 'lon', 'y': 'lat'})
+
+  print("stack.crs", stack.crs)
+
+  return stack
+```
+
+On utilise la Classification de Scène de Sentinel (bande scl) pour faire un test sur le couvert nuageux.
+En effet grâce à cette classification on peut tester à l'échelle de la géométrie si un pixel est bon ou pas. Pour l'instant nous ne faisons que des test simple sur la totalité de la bounding box définie à partir de la géométrie. 
+
+![Les labels du produit SCL](scl_sentinel.png.png)
+
+Après réflexion, nous nous sommes aperçus qu'il ne fallait pas filtrer au départ (la requête initiale) sur le couvert nuageux (cc) car nous pourrions éliminer des dates qui seraient nécessaires et sur lesquelles la géométrie est tout de même visible. Ainsi le premier filtre n'est pas nécessaire mais il faut que le filtre grâce à la classification de scènes Sentinel soit bien restrictif.
+
+Ce test sur le couvert nuageux est ce qui prend le plus de temps dans le preprocessing des données. Nous sommes sur des temps de traitement de l'ordre de la minute sur un monothread avec un processeur à 2,4 GHz et avec 16 Go de RAM. Il est donc important de réfléchir à la sélection des dates qui seront utiles pour déterminer si la surface est brûlée ou non.
+
+Pour filtrer 13 images d'une stack sentinel comprenant 27 scènes, nous avons mis exactement 40 secondes pour une surface de 6 hectares. Sur la configuration décrite précédemment.
+
+Sur ce point, la question d'images de références par type d'écosystèmes peut être intéressant. En effet en disposant d'images de références de l'intégralité de la NC, nous pourrions éviter de conserver 13 scènes et n'en conserver que 2 ou trois.
+
+
+```{python}
+def select_scenes_without_cc(gdf_filter, stack):
+  """
+  On utilise la Scene Classification de Sentinel pour vérifier que la zone brulée est visible sur l'image.
+  """
+  data_times = pd.to_datetime(stack['time']).date
+  dates_burnedarea = gdf_filter['date_'].values
+  images_to_keep = []
+
+  for i, time in enumerate(data_times):
+    if time in dates_burnedarea:
+      images_to_keep.append(i)
+      print(f"on conserve automatiquement l'image {i}")
+      continue
+    
+    scl_data = stack.isel(time = i).sel(band = "scl") 
+
+    mask = (scl_data>=4) & (scl_data<=7)
+    filtered_data = scl_data.where(mask)
+
+    percentage = filtered_data.count() / scl_data.count() *100
+
+    if percentage > 95:
+      print(f"on prend l'image sufisamment peu couverte {i}")
+      images_to_keep.append(i)
+
+  data_to_keep = stack.isel(time=images_to_keep)
+
+  print(f"Nombre d'images après filtrage :{len(images_to_keep)}")
+
+  return data_to_keep
+```
+
+On peut maintenant faire notre calcul d'indices. Les indices sont définis dans le document d'étude de faisabilité réalisé précédemment. Dans cet exemple on ne calcule que les indices ndvi, nbr, nbr+, bais2.
+
+L'étude des données brutes (bande "red") nous montre que nous avons des valeurs de réflectances négatives. C'est un point de vigilance à adresser. Après consultation des métadonnées nous nous sommes aperçus qu'un offset de -0.1 était appliqué aux bandes.
+
+Afin de résoudre cette problématique et de ne pas avoir des valeurs de ndvi ou d'autres indices abbérantes (nous obtenions des valeurs de ndvi en-dehors de la plage -1 à +1), nous avons donc corrigé l'offset de -0.1 pour toutes les bandes.
+
+Ensuite seulement nous pouvons calculer nos indices.
+
+```{python}
+def calcul_indices (data_to_keep):
+  """
+  On calcule les indices à partir de la stack data_to_keep
+  """
+  data_indices = data_to_keep.sel(band=["blue","rededge2", "rededge3", "green","red", "nir","nir08","swir22", "scl"]).to_dataset(dim='band')
+
+  for elt in data_indices.data_vars :
+    data_indices[elt] = data_indices[elt] + 0.1 #Correction de l'offset
+
+  data_indices['ndvi'] = ((data_indices['nir'] - data_indices['red'])/(data_indices['nir'] + data_indices['red']))
+
+  data_indices['nbr'] = ((data_indices['nir'] - data_indices['swir22'])/(data_indices['nir'] + data_indices['swir22']))
+
+  data_indices['nbr+'] = ((data_indices['swir22'] - data_indices['nir08'] - data_indices['green'] - data_indices['blue'])/(data_indices['swir22'] + data_indices['nir08'] + data_indices['green'] + data_indices['blue']))
+
+  data_indices['bais2'] = (1-(numpy.sqrt((data_indices['rededge2'] * data_indices['rededge3'] * data_indices['nir08'])/data_indices['red']))*((data_indices['swir22'] - data_indices['nir08'] )/ numpy.sqrt((data_indices['swir22'] + data_indices['nir08'] ))+1))
+
+  return data_indices
+```
+
+On va maintenant faire un masque de la géométrie et le rajouter à notre dataset.
+
+```{python}
+def create_mask(dataset, gdf):
+  """
+  On utilise le geodataframe filtré sur la géométrie voulue pour créer un masque de la geométrie et le rajouter au dataset
+  """
+  ShapeMask = rasterio.features.geometry_mask(gdf['geometry'].to_crs(4326).apply(mapping),
+                                            out_shape =(len(dataset.lat), len(dataset.lon)),
+                                            transform = dataset.transform,
+                                            invert = True)
+  ShapeMask = xarray.DataArray(ShapeMask, dims = ("y","x"))
+  dataset['mask'] = ShapeMask
+  
+  return dataset
+```
+
+On va faire tourner toutes ces fonctions pour réaliser les traitements. C'est un test sur une géométrie que l'on sait brûlée (surface_id = 359594) pour poser les idées et montrer les exemples.
+
+On prend un cloud cover (cc) de 100 pour que le premier filtre sur la requête ne soit pas du tout restrictif.
+
+Les résultats des tests effectués sur 10 surfaces brûlées sont organisées dans un autre document.
+
+```{python}
+gdf, dates = preprocess_geometries_df(BurnedArea_data)
+gdf_filter = gdf[gdf["surface_id"]==359594]
+sentinel_stack = construct_stack(gdf_filter, 100, api_url, collection, dates)
+data_to_keep = select_scenes_without_cc(gdf_filter, sentinel_stack)
+data_indices = calcul_indices (data_to_keep)
+dataset = create_mask(data_indices, gdf_filter)
+```
+
+A partir de là nous disposons des indices, du masque de la géométrie et ce par surface brûlée.
+
+Il faut donc maintenant organiser la bancarisation de ces données. 
+
+Le choix s'est porté sur la sauvegarde en fichier netCDF.
+
+Nous commencons par supprimer les coordonnées et les variables du xarray dont nous n'avons pas l'utilité. Ensuite, nous devons caster l'attribut specifications qui est de type RasterSpec en string sinon nous ne pouvons sauvegarder le fichier en netCDF.
+
+Une fois ceci fait nous pouvons faire appel à la méthode `to_netcdf` d'un dataset xarray et ainsi sauvegarder notre dataset xarray en un fichier.
+
+Nous avons choisi comme nomenclature, sur laquelle il faudra réfléchir :
+
+SurfaceId_NomDeLaTuile_DateAcquisition.nc
+
+Il sera important de vérifier que le passage des specifications du xarray en string n'altère pas sa lecture. 
+
+Au niveau de la taille du fichier obtenu, pour une surface de 6 hectares, en sauvegardant 4 indices (le NDVI, le NBR, le NBR+ et le BAIS2) plus le masque de la surface brûlée, nous obtenons pour 13 images sauvegardées un total de 625 Ko. 
+
+Soit environ 2 Ko par indices par scène et par hectare.
+
+Ainsi si nous sauvegardons en moyenne 15 scènes (images), pour 5 indices et pour 20 000 surfaces d'une taille moyenne de 10 hectares, cela représente un espace disque de 30 Go.
+
+```{python}
+def sauvegarder_netcdf (data_indices, gdf_filtered):
+  dataset_save = data_indices.drop([c for c in data_indices.coords if not (c in ['time', 'lat', 'lon'])])
+  dataset_save = dataset_save.drop_vars([v for v in dataset_save.data_vars if not (v in ['ndvi', 'nbr', 'nbr+', 'bais2', 'mask'])])
+  dataset_save.attrs['spec'] = str(dataset_save.attrs['spec'])
+  dataset_save.to_netcdf(f"{str(gdf_filtered["surface_id"].iloc[0])}_{str(gdf_filtered["nom"].iloc[0])}_{str(gdf_filtered["date"].iloc[0])}.nc")
+  return dataset_save
+```
+
+Ici nous mettons quelques snippets de code, pour réaliser des plots. Le premier est un plot une dimension de la série temporelle de ndvi, en calculant sur l'emprise de la géométrie la valeur moyenne (mean) du ndvi.
+
+Il sera important de se poser la question de quelle grandeur statistique pourra être significative (moyenne, médiane, mode principal après classification) pour aider à la qualification des surfaces brûlées.
+
+```{python}
+data_1D = dataset.where(dataset['mask']).data_vars['ndvi'].mean(dim = ["lat", "lon"])
+print(gdf_filter["date_"].iloc[0])
+data_1D.plot()
+```
+
+Le deuxième est identique mais nous calculons ici la médiane.
+
+```{python}
+data_1D_median = data_indices.where(data_indices['mask']).data_vars['ndvi'].median(dim = ["lat", "lon"])
+print(ba_test_filter["date_"].iloc[0])
+data_1D_median.plot()
+```
+
+Enfin par la sélection de deux scènes dans la dimension temporelle du xarray, nous pouvons aussi calculer un delta NBR pour la géométrie.
+
+```{python}
+# Plot d'un delta NBR
+(data_indices['nbr'].isel(time=11)-data_indices['nbr'].isel(time=8)).plot()
+```
+
+### Conclusion du Test de STAC
+
+La spécification STAC et les outils en python pour traiter cette spécification ont donné lieu à des essais plutôt concluants. Il faudra réaliser l'analyse statistique sur un échantillon représentatif des surfaces brûlées et surtout réfléchir à comment réutiliser les indices calculés grâce à ces outils.
+
+Une solution serait que pour chaque sortie mensuelle de géométries issues de la chaîne des feux, nous intégrions le geopackage de ces données pour obtenir pour chaque forme le fichier netCDF contenant les indicateurs pertinents et le masque de la géométrie.
+
+## SISPPEO
+
+SISPPEO est une bibliothèque développée par l'INRAE qui permet de créer des produit appelés produits L3 et de les sauvegarder sous la forme de fichiers NetCDF, à partir d'un reader de données (un reader par couple satellite / correction atmosphérique) en lui appliquant un algorithme donné.
+
+Une interface en ligne de commande est disponible et il est aussi possible de l'utiliser sous forme de package python.
+
+Pour le moment SISPPEO peut lire :
+- Les produits S2 de l'ESA (L1C et L2A)
+- Les produits L8 de l'USGS (L1C1 et L2C1)
+- Les produits S2 L2A et L8 L2 GRS
+- Les produits S2 L2A C2RCC
+- Les produits S2 L2A MAJA
+
+Il est possible assez aisément d'écrire un nouveau reader. Le [tutoriel SISPPEO](https://inrae.github.io/SISPPEO/development/add_reader.html) à ce propos est bien expliqué et cela prendrait peu de temps (de l'ordre de la journée par nouveau reader à développer).
+
+Les algorithmes qui nous intéressent concernent le domaine terrestre. Pour le moment seul deux algorithmes pour des produits terrestres sont disponibles dans la librairie SISPPEO :
+- Le calcul du NBR 
+- Le calcul du NDVI
+
+Avec SISPPEO il est possible de créer et d'analyser une série temporelle. Pour cela 
