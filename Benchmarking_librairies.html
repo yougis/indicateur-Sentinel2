@@ -1,0 +1,1123 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.4.549">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>Benchmarking des librairies disponibles pour le Contrôle Qualité des surfaces brûlées : PYSTAC - SISPPEO - GEE</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="Benchmarking_librairies_files/libs/clipboard/clipboard.min.js"></script>
+<script src="Benchmarking_librairies_files/libs/quarto-html/quarto.js"></script>
+<script src="Benchmarking_librairies_files/libs/quarto-html/popper.min.js"></script>
+<script src="Benchmarking_librairies_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="Benchmarking_librairies_files/libs/quarto-html/anchor.min.js"></script>
+<link href="Benchmarking_librairies_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="Benchmarking_librairies_files/libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="Benchmarking_librairies_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="Benchmarking_librairies_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="Benchmarking_librairies_files/libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+
+
+</head>
+
+<body class="fullcontent">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Benchmarking des librairies disponibles pour le Contrôle Qualité des surfaces brûlées : PYSTAC - SISPPEO - GEE</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="introduction" class="level1">
+<h1>Introduction</h1>
+<p>Dans le cadre du contrôle qualité des surfaces brûlées obtenues par la chaîne des feux de l’OEIL, traitée par Insight, la recherche d’outils pour le calcul d’indicateurs pertinents afin de qualifier les surfaces détectées a amené APID à comparer trois possibilités : - La spécification STAC et les outils de gestion des données STAC en Python (PYSTAC et STACKSTAC) ; - La librairie SISPPEO ; - L’outil Google Earth Engine.</p>
+<p>L’objectif de cette étude était de valider la faisabilité de bancarisation des données avec les différents outils, la facilité de traitement et d’évaluer les workflows respectifs.</p>
+<p>Sur une des méthodes pré-identifiées a été réalisé une preuve de concept (PoC) détaillée. Le code de cette preuve de concept sur PYSTAC et la spécification STAC est joint au présent rapport sur le benchmarking.</p>
+<p>Sur les deux autres outils, les avantages et inconvénients sont exposés ainsi que le temps de réalisation des adaptations nécessaires pour répondre à la problématique de caractérisation des surfaces brûlées détectées et de contrôle qualité.</p>
+</section>
+<section id="benchmarking" class="level1">
+<h1>Benchmarking</h1>
+<section id="pystac-et-la-spécification-stac" class="level2">
+<h2 class="anchored" data-anchor-id="pystac-et-la-spécification-stac">PYSTAC et la spécification STAC</h2>
+<section id="introduction-à-stac" class="level3">
+<h3 class="anchored" data-anchor-id="introduction-à-stac">Introduction à STAC</h3>
+<p>La spécification SpatioTemporal Asset Catalog est un standard, un langage unifié pour décrire les données géospatiales, ce qui permet des recherches et des requêtes sur ces données geospatiales facilitées.</p>
+<p>En pratique, STAC est un réseau de fichiers JSON qui font références les uns aux autres, avec chaque fichier JSON qui se plie à un ensemble déterminé de spécifications en fonction de l’objet STAC qui est décrit.</p>
+<p>Tout d’abord définissons ce qu’est un asset spatio-temporel :</p>
+<p>Un <code>SpatioTemporal Asset</code> est tout fichier qui représente de l’information à propos de la planète Terre, information saisie à une certaine place et à un instant donné. Par exemple toute donné spatio-temporelle qui provient d’imagerie (satellite, avion, drones), du Synthetic Aperture Radar, des nuages de points (LIDAR, SLAM), des cubes de données et des vidéos full-motion.</p>
+<p>L’idée clef est que le GeoJSON n’est pas l’objet d’étude, mais plutôt le fichier de références qui sert comme index aux assets STAC.</p>
+</section>
+<section id="composants-stac" class="level3">
+<h3 class="anchored" data-anchor-id="composants-stac">Composants STAC</h3>
+<p>La spécification STAC comporte trois composants essentiels :</p>
+<ol type="1">
+<li>Item</li>
+<li>Catalogue</li>
+<li>Collection</li>
+</ol>
+<p>Chaque composant est autonome mais ils fonctionnent mieux de concert.</p>
+<section id="stac-item" class="level4">
+<h4 class="anchored" data-anchor-id="stac-item">STAC Item</h4>
+<p>Un Item STAC est la brique fondamentale de la spécification STAC. C’est une fonctionnalité GeoJSON complétée par des métadonnées additionnelles, lesquelles permettent aux clients (ceux qui recherchent et requêtent les données) de parcourir les catalogues. Comme un Item STAC est un GeoJSON, tout SIG moderne ou librairie geospatiale peut le lire.</p>
+<p>Une pratique commune dans l’utilisation de la spécification STAC pour l’imagerie est de définir un Asset STAC pour chaque bande d’une scène et qu’il y ait un seul Item STAC pour représenter toutes les bandes dans une seule scène.</p>
+<p>Voici les champs GeoJSON d’un Item STAC JSON :</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="STAC-Item.jpeg" class="img-fluid figure-img"></p>
+<figcaption>Les champs d’un STAC Item</figcaption>
+</figure>
+</div>
+<p>Les infomations détaillées à propos de ces champs peuvent être trouvés <a href="https://github.com/radiantearth/stac-spec/blob/master/item-spec/item-spec.md#item-fields">dans le tableau suivant</a>.</p>
+</section>
+<section id="stac-catalogue" class="level4">
+<h4 class="anchored" data-anchor-id="stac-catalogue">STAC Catalogue</h4>
+<p>Un catalogue est généralement le point de départ pour naviguer dans un réseau STAC. Un fichier <code>catalog.json</code>contient les liens vers une combinaison d’autres Catalogues STAC, de Collections et/ou d’Items STAC.</p>
+<p>On peut le penser comme une arborescence de dossiers dans un ordinateur.</p>
+<p>Il n’y a pas de restrictions sur la manière dont un STAC Catalogue est organisé. Voici les champs d’un STAC Catalogue JSON :</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="STAC-Catalog.jpeg" class="img-fluid figure-img"></p>
+<figcaption>Les champs d’un STAC Catalogue</figcaption>
+</figure>
+</div>
+<p>Les infomations détaillées à propos de ces champs peuvent être trouvés <a href="https://github.com/radiantearth/stac-spec/blob/master/catalog-spec/catalog-spec.md#catalog-fields">dans le tableau suivant</a>.</p>
+</section>
+<section id="stac-collection" class="level4">
+<h4 class="anchored" data-anchor-id="stac-collection">STAC Collection</h4>
+<p>Une Collection STAC est construite sur la spécification STAC Catalogue pour inclure des métadonnées additionnelles sur un ensemble d’items qui font partie de la collection.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="STAC-Collection.png" class="img-fluid figure-img"></p>
+<figcaption>Les champs d’une Collection STAC</figcaption>
+</figure>
+</div>
+</section>
+</section>
+<section id="chercher-un-catalogue-stac" class="level3">
+<h3 class="anchored" data-anchor-id="chercher-un-catalogue-stac">Chercher un catalogue STAC</h3>
+<p>On va requêter un endpoint STAC API avec Python en utilisant la librairie <code>pystac_client</code>. Les images Sentinel-2 sont stockées en Cloud Oprimized Geotiff (COG) et disponibles sur <a href="https://registry.opendata.aws/sentinel-2-l2a-cogs/">AWS</a>, <a href="https://planetarycomputer.microsoft.com/dataset/sentinel-2-l2a">AZURE</a>, <a href="https://cloud.google.com/storage/docs/public-datasets/sentinel-2">GCP</a> et <a href="https://scihub.copernicus.eu/">COPERNICUS</a>.</p>
+<p>Les catalogues STAC représentent parfois quelques problèmes. Certains sont incomplets et déclenchent une erreur lors de la récupération des scènes Sentinel-2. D’autres sont complets mais nécessitent un accès avec “credentials”. Et donc un compte utilisateur parfois payant.</p>
+<p>Nous avons pour le moment travaillé avec le catalogue STAC d’AWS et avons rencontré certains problèmes notamment sur la bande de Classification de Scène (SCL) des produits L2A de Sentinel-2.</p>
+</section>
+<section id="test-de-stac" class="level3">
+<h3 class="anchored" data-anchor-id="test-de-stac">Test de STAC</h3>
+<p>Nous avons réalisé des tests pour le benchmarking de nos librairies. Le test de STAC est concluant. La réalisation d’une collecte d’indices grâce à pystac_client et stackstac est faisable plutôt simplement.</p>
+<p>Les snippets de code suivants le réalise.</p>
+<div id="44dc73db" class="cell" data-execution_count="1">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co">"""</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="co">! pip install pystac_client</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="co">! pip install stackstac</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="co">! pip install geopandas</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="co">! pip install rioxarray</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="co">! pip install rasterio</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="co">! pip install netCDF4</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="co">"""</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-display" data-execution_count="1">
+<pre><code>'\n! pip install pystac_client\n! pip install stackstac\n! pip install geopandas\n! pip install rioxarray\n! pip install rasterio\n! pip install netCDF4\n'</code></pre>
+</div>
+</div>
+<div id="ab0e9c73" class="cell" data-execution_count="2">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pystac_client <span class="im">import</span> Client <span class="im">as</span> psc</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> stackstac</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> geopandas <span class="im">as</span> gpd</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> datetime</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> rioxarray</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> rasterio.features</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> xarray</span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> shapely.geometry <span class="im">import</span> mapping</span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pyproj <span class="im">import</span> CRS</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<p>On va aller chercher les tuiles qui appartiennent à la collection <code>sentinel-2-l2a</code>, soit des réflectances de surface corrigées des effets atmosphériques. De même on définit nos CRS de travail.</p>
+<div id="81e129f9" class="cell" data-execution_count="3">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>api_url <span class="op">=</span> <span class="st">"https://earth-search.aws.element84.com/v1"</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>collection <span class="op">=</span> <span class="st">"sentinel-2-l2a"</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>crs_rgnc <span class="op">=</span> CRS.from_epsg(<span class="dv">3163</span>)</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>crs_4326 <span class="op">=</span> CRS.from_epsg(<span class="dv">4326</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<p>On va aussi charger les géométries qui nous intéressent, les surfaces brûlées détectées par la chaîne des feux, sur les mois de septembre et octobre 2023. Le chemin d’accès pour les test était un chemin d’accès local. Cependant pour travailler proporement il sera nécessaire d’utiliser intake et dotenv : - Intake permettra d’ouvrir le catalogue des géométries en se connectant à la base de données postgres de l’OEIL. - Dotenv permettra de gérer proprement les credentials et les chemins d’accès.</p>
+<div id="47ef1aff" class="cell" data-execution_count="4">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>local_path_to_BA <span class="op">=</span> <span class="vs">r"C:\Users\Administrateur\OneDrive\Documents\APID\CLIENTS\OEIL\SISSPEO\datas\sentinel_surfaces_detectees_sept_oct_2023.gpkg"</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>BurnedArea_data <span class="op">=</span> gpd.read_file(local_path_to_BA)</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> preprocess_geometries_df(gdf):</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>  <span class="co">"""</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="co">  On rajoute une colonne date_ au format datetime et on passe de multipolygones à polygon</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a><span class="co">  On récupère la liste de dates des geométries de surfaces brûlées avec un intervalle de temps</span></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a><span class="co">  de 120 jours avant la première détection de surface brûlée et le geodataframe corrigé (passé de multipolygones à polygones)</span></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a><span class="co">  """</span></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>  gdf[<span class="st">'date_'</span>]<span class="op">=</span> pd.to_datetime(gdf[<span class="st">'date'</span>], <span class="bu">format</span><span class="op">=</span><span class="st">'%Y-%m-</span><span class="sc">%d</span><span class="st">'</span>).dt.date</span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>  gdf <span class="op">=</span> gdf.explode()</span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>  datemin <span class="op">=</span> (<span class="bu">min</span>(gdf[<span class="st">'date_'</span>]) <span class="op">-</span> datetime.timedelta(days<span class="op">=</span><span class="dv">120</span>)).strftime(<span class="st">'%Y-%m-</span><span class="sc">%d</span><span class="st">'</span>) </span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>  datemax <span class="op">=</span> <span class="bu">max</span>(gdf[<span class="st">'date_'</span>]).strftime(<span class="st">'%Y-%m-</span><span class="sc">%d</span><span class="st">'</span>)</span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>  dates <span class="op">=</span> <span class="ss">f"</span><span class="sc">{</span>datemin<span class="sc">}</span><span class="ss">/</span><span class="sc">{</span>datemax<span class="sc">}</span><span class="ss">"</span></span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>  <span class="bu">print</span>(<span class="ss">f"Interval temporel </span><span class="sc">{</span>dates<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> (gdf, dates)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<p>Nous avons une liste de polygones fournie par l’OEIL qui ont déjà été caractérisés par photointerprétation que nous allons utiliser pour effectuer des tests. Nous définissons les les dictionnaires de géométries à partir de cette liste de polygones.</p>
+<div id="6b720dea" class="cell" data-execution_count="5">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>surfaces_id <span class="op">=</span> {</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>    <span class="st">"burned"</span> : [<span class="dv">358032</span>, <span class="dv">358018</span>, <span class="dv">358010</span>, <span class="dv">359919</span>, <span class="dv">359594</span>, <span class="dv">359614</span>, <span class="dv">358008</span>, <span class="dv">359524</span>, <span class="dv">359592</span>, <span class="dv">359944</span>],</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    <span class="st">"unburned"</span>  : [<span class="dv">357997</span>, <span class="dv">358001</span>, <span class="dv">358002</span>, <span class="dv">358017</span>, <span class="dv">358012</span>, <span class="dv">359543</span>, <span class="dv">359788</span>, <span class="dv">359498</span>, <span class="dv">359545</span>, <span class="dv">360203</span>],</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">"doubt"</span>: [<span class="dv">358026</span>, <span class="dv">358033</span>,<span class="dv">359595</span>, <span class="dv">359964</span>, <span class="dv">362134</span>, <span class="dv">362171</span>, <span class="dv">362192</span>, <span class="dv">362851</span>, <span class="dv">360718</span>, <span class="dv">359666</span>]</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>df_burned <span class="op">=</span> BurnedArea_data[BurnedArea_data[<span class="st">'surface_id'</span>].isin(surfaces_id[<span class="st">"burned"</span>])]</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>df_unburned <span class="op">=</span> BurnedArea_data[BurnedArea_data[<span class="st">'surface_id'</span>].isin(surfaces_id[<span class="st">"unburned"</span>])]</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>df_doubt <span class="op">=</span> BurnedArea_data[BurnedArea_data[<span class="st">'surface_id'</span>].isin(surfaces_id[<span class="st">"doubt"</span>])]</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>dict_burned <span class="op">=</span> {i : j <span class="cf">for</span> i,j <span class="kw">in</span> <span class="bu">zip</span>(df_burned[<span class="st">'surface_id'</span>].to_list(), df_burned[<span class="st">'geometry'</span>].to_list())}</span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>dict_unburned <span class="op">=</span> {i : j <span class="cf">for</span> i,j <span class="kw">in</span> <span class="bu">zip</span>(df_unburned[<span class="st">'surface_id'</span>].to_list(), df_unburned[<span class="st">'geometry'</span>].to_list())}</span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>dict_doubt <span class="op">=</span> {i : j <span class="cf">for</span> i,j <span class="kw">in</span> <span class="bu">zip</span>(df_doubt[<span class="st">'surface_id'</span>].to_list(), df_doubt[<span class="st">'geometry'</span>].to_list())}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<p>Nous allons maintenant pouvoir faire les tests sur chaque surfaces brûlées. Pour cela nous commencons par récupérer la bounding box du geodataframe filtré sur une géométrie. Nous récupérons les scènes Sentinel-2 L2A ayant moins d’un certain couvert nuageux (cc pour cloud cover) grâce à pystac_client. Et nous en concevont une stack dont nous vérifions le crs.</p>
+<div id="371b8667" class="cell" data-execution_count="6">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> construct_stack(gdf_filtrer, cc, URL, collection, dates):</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  <span class="co">"""</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="co">  Fonction de construction de la stack à partir d'un geodataframe filtré sur une surface brûlée.</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="co">  """</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>  bbox <span class="op">=</span> gdf_filtrer[<span class="st">"geometry"</span>].to_crs(<span class="dv">4326</span>).total_bounds</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>  <span class="bu">print</span>(<span class="ss">f'Emprise spatiale de la géométrie sélectionnée : </span><span class="sc">{</span>bbox<span class="sc">}</span><span class="ss">'</span>)</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>  client <span class="op">=</span> psc.<span class="bu">open</span>(URL)</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>  search <span class="op">=</span> client.search(</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>   </span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>    collections<span class="op">=</span>[collection],</span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>    bbox<span class="op">=</span>bbox,</span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>    datetime<span class="op">=</span>dates,</span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>    query<span class="op">=</span>{<span class="st">"eo:cloud_cover"</span>: {<span class="st">"lt"</span>: cc}}</span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a>  <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>search<span class="sc">.</span>matched()<span class="sc">}</span><span class="ss"> scenes Sentinel-2 L2A trouvées dans l'interval temporel ayant - de </span><span class="sc">{</span>cc<span class="sc">}</span><span class="ss">% de couverture nuageuse"</span>)</span>
+<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a>  items <span class="op">=</span> search.item_collection()</span>
+<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a>  stack <span class="op">=</span> stackstac.stack(</span>
+<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a>    items,</span>
+<span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a>    bounds_latlon<span class="op">=</span>[bbox[<span class="dv">0</span>], bbox[<span class="dv">1</span>],  bbox[<span class="dv">2</span>],  bbox[<span class="dv">3</span>]],</span>
+<span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a>    gdal_env<span class="op">=</span>stackstac.DEFAULT_GDAL_ENV.updated(</span>
+<span id="cb7-24"><a href="#cb7-24" aria-hidden="true" tabindex="-1"></a>      {<span class="st">'GDAL_HTTP_MAX_RETRY'</span>: <span class="dv">3</span>,</span>
+<span id="cb7-25"><a href="#cb7-25" aria-hidden="true" tabindex="-1"></a>      <span class="st">'GDAL_HTTP_RETRY_DELAY'</span>: <span class="dv">5</span>,</span>
+<span id="cb7-26"><a href="#cb7-26" aria-hidden="true" tabindex="-1"></a>      }),</span>
+<span id="cb7-27"><a href="#cb7-27" aria-hidden="true" tabindex="-1"></a>    epsg<span class="op">=</span><span class="dv">4326</span></span>
+<span id="cb7-28"><a href="#cb7-28" aria-hidden="true" tabindex="-1"></a>    ).rename({<span class="st">'x'</span>: <span class="st">'lon'</span>, <span class="st">'y'</span>: <span class="st">'lat'</span>})</span>
+<span id="cb7-29"><a href="#cb7-29" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-30"><a href="#cb7-30" aria-hidden="true" tabindex="-1"></a>  <span class="bu">print</span>(<span class="st">"stack.crs"</span>, stack.crs)</span>
+<span id="cb7-31"><a href="#cb7-31" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-32"><a href="#cb7-32" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> stack</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<p>On utilise la Classification de Scène de Sentinel (bande scl) pour faire un test sur le couvert nuageux. En effet grâce à cette classification on peut tester à l’échelle de la géométrie si un pixel est bon ou pas. Pour l’instant nous ne faisons que des test simple sur la totalité de la bounding box définie à partir de la géométrie.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="scl_sentinel.png" class="img-fluid figure-img"></p>
+<figcaption>Les labels du produit SCL</figcaption>
+</figure>
+</div>
+<p>Après réflexion, nous nous sommes aperçus qu’il ne fallait pas filtrer au départ (la requête initiale) sur le couvert nuageux (cc) car nous pourrions éliminer des dates qui seraient nécessaires et sur lesquelles la géométrie est tout de même visible. Ainsi le premier filtre n’est pas nécessaire mais il faut que le filtre grâce à la classification de scènes Sentinel soit bien restrictif.</p>
+<p>Ce test sur le couvert nuageux est ce qui prend le plus de temps dans le preprocessing des données. Nous sommes sur des temps de traitement de l’ordre de la minute sur un monothread avec un processeur à 2,4 GHz et avec 16 Go de RAM. Il est donc important de réfléchir à la sélection des dates qui seront utiles pour déterminer si la surface est brûlée ou non.</p>
+<p>Pour filtrer 13 images d’une stack sentinel comprenant 27 scènes, nous avons mis exactement 40 secondes pour une surface de 6 hectares. Sur la configuration décrite précédemment.</p>
+<p>Sur ce point, la question d’images de références par type d’écosystèmes peut être intéressant. En effet en disposant d’images de références de l’intégralité de la NC, nous pourrions éviter de conserver 13 scènes et n’en conserver que 2 ou trois.</p>
+<div id="01af1043" class="cell" data-execution_count="7">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> select_scenes_without_cc(gdf_filter, stack):</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>  <span class="co">"""</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="co">  On utilise la Scene Classification de Sentinel pour vérifier que la zone brulée est visible sur l'image.</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="co">  """</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>  data_times <span class="op">=</span> pd.to_datetime(stack[<span class="st">'time'</span>]).date</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>  dates_burnedarea <span class="op">=</span> gdf_filter[<span class="st">'date_'</span>].values</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>  images_to_keep <span class="op">=</span> []</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> i, time <span class="kw">in</span> <span class="bu">enumerate</span>(data_times):</span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> time <span class="kw">in</span> dates_burnedarea:</span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>      images_to_keep.append(i)</span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>      <span class="bu">print</span>(<span class="ss">f"on conserve automatiquement l'image </span><span class="sc">{</span>i<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>      <span class="cf">continue</span></span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>    scl_data <span class="op">=</span> stack.isel(time <span class="op">=</span> i).sel(band <span class="op">=</span> <span class="st">"scl"</span>) </span>
+<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a>    mask <span class="op">=</span> (scl_data<span class="op">&gt;=</span><span class="dv">4</span>) <span class="op">&amp;</span> (scl_data<span class="op">&lt;=</span><span class="dv">7</span>)</span>
+<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a>    filtered_data <span class="op">=</span> scl_data.where(mask)</span>
+<span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-20"><a href="#cb8-20" aria-hidden="true" tabindex="-1"></a>    percentage <span class="op">=</span> filtered_data.count() <span class="op">/</span> scl_data.count() <span class="op">*</span><span class="dv">100</span></span>
+<span id="cb8-21"><a href="#cb8-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-22"><a href="#cb8-22" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> percentage <span class="op">&gt;</span> <span class="dv">95</span>:</span>
+<span id="cb8-23"><a href="#cb8-23" aria-hidden="true" tabindex="-1"></a>      <span class="bu">print</span>(<span class="ss">f"on prend l'image sufisamment peu couverte </span><span class="sc">{</span>i<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb8-24"><a href="#cb8-24" aria-hidden="true" tabindex="-1"></a>      images_to_keep.append(i)</span>
+<span id="cb8-25"><a href="#cb8-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-26"><a href="#cb8-26" aria-hidden="true" tabindex="-1"></a>  data_to_keep <span class="op">=</span> stack.isel(time<span class="op">=</span>images_to_keep)</span>
+<span id="cb8-27"><a href="#cb8-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-28"><a href="#cb8-28" aria-hidden="true" tabindex="-1"></a>  <span class="bu">print</span>(<span class="ss">f"Nombre d'images après filtrage :</span><span class="sc">{</span><span class="bu">len</span>(images_to_keep)<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb8-29"><a href="#cb8-29" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-30"><a href="#cb8-30" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> data_to_keep</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<p>On peut maintenant faire notre calcul d’indices. Les indices sont définis dans le document d’étude de faisabilité réalisé précédemment. Dans cet exemple on ne calcule que les indices ndvi, nbr, nbr+, bais2.</p>
+<p>L’étude des données brutes (bande “red”) nous montre que nous avons des valeurs de réflectances négatives. C’est un point de vigilance à adresser. Après consultation des métadonnées nous nous sommes aperçus qu’un offset de -0.1 était appliqué aux bandes.</p>
+<p>Afin de résoudre cette problématique et de ne pas avoir des valeurs de ndvi ou d’autres indices abbérantes (nous obtenions des valeurs de ndvi en-dehors de la plage -1 à +1), nous avons donc corrigé l’offset de -0.1 pour toutes les bandes.</p>
+<p>Ensuite seulement nous pouvons calculer nos indices.</p>
+<div id="363bc275" class="cell" data-execution_count="8">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> calcul_indices (data_to_keep):</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>  <span class="co">"""</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="co">  On calcule les indices à partir de la stack data_to_keep</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="co">  """</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>  data_indices <span class="op">=</span> data_to_keep.sel(band<span class="op">=</span>[<span class="st">"blue"</span>,<span class="st">"rededge2"</span>, <span class="st">"rededge3"</span>, <span class="st">"green"</span>,<span class="st">"red"</span>, <span class="st">"nir"</span>,<span class="st">"nir08"</span>,<span class="st">"swir22"</span>, <span class="st">"scl"</span>]).to_dataset(dim<span class="op">=</span><span class="st">'band'</span>)</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> elt <span class="kw">in</span> data_indices.data_vars :</span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>    data_indices[elt] <span class="op">=</span> data_indices[elt] <span class="op">+</span> <span class="fl">0.1</span> <span class="co">#Correction de l'offset</span></span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>  data_indices[<span class="st">'ndvi'</span>] <span class="op">=</span> ((data_indices[<span class="st">'nir'</span>] <span class="op">-</span> data_indices[<span class="st">'red'</span>])<span class="op">/</span>(data_indices[<span class="st">'nir'</span>] <span class="op">+</span> data_indices[<span class="st">'red'</span>]))</span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>  data_indices[<span class="st">'nbr'</span>] <span class="op">=</span> ((data_indices[<span class="st">'nir'</span>] <span class="op">-</span> data_indices[<span class="st">'swir22'</span>])<span class="op">/</span>(data_indices[<span class="st">'nir'</span>] <span class="op">+</span> data_indices[<span class="st">'swir22'</span>]))</span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>  data_indices[<span class="st">'nbr+'</span>] <span class="op">=</span> ((data_indices[<span class="st">'swir22'</span>] <span class="op">-</span> data_indices[<span class="st">'nir08'</span>] <span class="op">-</span> data_indices[<span class="st">'green'</span>] <span class="op">-</span> data_indices[<span class="st">'blue'</span>])<span class="op">/</span>(data_indices[<span class="st">'swir22'</span>] <span class="op">+</span> data_indices[<span class="st">'nir08'</span>] <span class="op">+</span> data_indices[<span class="st">'green'</span>] <span class="op">+</span> data_indices[<span class="st">'blue'</span>]))</span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a>  data_indices[<span class="st">'bais2'</span>] <span class="op">=</span> (<span class="dv">1</span><span class="op">-</span>(numpy.sqrt((data_indices[<span class="st">'rededge2'</span>] <span class="op">*</span> data_indices[<span class="st">'rededge3'</span>] <span class="op">*</span> data_indices[<span class="st">'nir08'</span>])<span class="op">/</span>data_indices[<span class="st">'red'</span>]))<span class="op">*</span>((data_indices[<span class="st">'swir22'</span>] <span class="op">-</span> data_indices[<span class="st">'nir08'</span>] )<span class="op">/</span> numpy.sqrt((data_indices[<span class="st">'swir22'</span>] <span class="op">+</span> data_indices[<span class="st">'nir08'</span>] ))<span class="op">+</span><span class="dv">1</span>))</span>
+<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> data_indices</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<p>On va maintenant faire un masque de la géométrie et le rajouter à notre dataset.</p>
+<div id="0a3b7295" class="cell" data-execution_count="9">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> create_mask(dataset, gdf):</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  <span class="co">"""</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="co">  On utilise le geodataframe filtré sur la géométrie voulue pour créer un masque de la geométrie et le rajouter au dataset</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a><span class="co">  """</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>  ShapeMask <span class="op">=</span> rasterio.features.geometry_mask(gdf[<span class="st">'geometry'</span>].to_crs(<span class="dv">4326</span>).<span class="bu">apply</span>(mapping),</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>                                            out_shape <span class="op">=</span>(<span class="bu">len</span>(dataset.lat), <span class="bu">len</span>(dataset.lon)),</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>                                            transform <span class="op">=</span> dataset.transform,</span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>                                            invert <span class="op">=</span> <span class="va">True</span>)</span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>  ShapeMask <span class="op">=</span> xarray.DataArray(ShapeMask, dims <span class="op">=</span> (<span class="st">"lat"</span>,<span class="st">"lon"</span>))</span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>  dataset[<span class="st">'mask'</span>] <span class="op">=</span> ShapeMask</span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> dataset</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<p>On va faire tourner toutes ces fonctions pour réaliser les traitements. C’est un test sur une géométrie que l’on sait brûlée (surface_id = 359594) pour poser les idées et montrer les exemples.</p>
+<p>On prend un cloud cover (cc) de 100 pour que le premier filtre sur la requête ne soit pas du tout restrictif.</p>
+<p>Les résultats des tests effectués sur 10 surfaces brûlées, 10 surfaces considérées comme nous brûlées et 10 surface en doute après la photo-interprétation sont organisées dans un autre document.</p>
+<div id="3329bd1d" class="cell" data-execution_count="10">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>gdf, dates <span class="op">=</span> preprocess_geometries_df(BurnedArea_data)</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>gdf_filter <span class="op">=</span> gdf[gdf[<span class="st">"surface_id"</span>]<span class="op">==</span><span class="dv">359594</span>]</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>sentinel_stack <span class="op">=</span> construct_stack(gdf_filter, <span class="dv">100</span>, api_url, collection, dates)</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>data_to_keep <span class="op">=</span> select_scenes_without_cc(gdf_filter, sentinel_stack)</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>data_indices <span class="op">=</span> calcul_indices (data_to_keep)</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>dataset <span class="op">=</span> create_mask(data_indices, gdf_filter)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stderr">
+<pre><code>C:\Users\Administrateur\AppData\Local\Temp\ipykernel_26752\99496939.py:12: FutureWarning: Currently, index_parts defaults to True, but in the future, it will default to False to be consistent with Pandas. Use `index_parts=True` to keep the current behavior and True/False to silence the warning.
+  gdf = gdf.explode()
+E:\APP_GLOBAL\PYTHON\Lib\site-packages\stackstac\prepare.py:408: UserWarning: The argument 'infer_datetime_format' is deprecated and will be removed in a future version. A strict version of it is now the default, see https://pandas.pydata.org/pdeps/0004-consistent-to-datetime-parsing.html. You can safely remove this argument.
+  times = pd.to_datetime(</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Interval temporel 2022-09-12/2023-10-30
+Emprise spatiale de la géométrie sélectionnée : [166.00049239 -21.54826384 166.00819187 -21.54280814]
+140 scenes Sentinel-2 L2A trouvées dans l'interval temporel ayant - de 100% de couverture nuageuse
+stack.crs epsg:4326
+on prend l'image sufisamment peu couverte 8
+on prend l'image sufisamment peu couverte 9
+on prend l'image sufisamment peu couverte 12
+on prend l'image sufisamment peu couverte 13
+on prend l'image sufisamment peu couverte 16
+on prend l'image sufisamment peu couverte 17
+on prend l'image sufisamment peu couverte 31
+on prend l'image sufisamment peu couverte 32
+on prend l'image sufisamment peu couverte 39
+on prend l'image sufisamment peu couverte 40
+on prend l'image sufisamment peu couverte 47
+on prend l'image sufisamment peu couverte 48
+on prend l'image sufisamment peu couverte 53
+on prend l'image sufisamment peu couverte 58
+on prend l'image sufisamment peu couverte 59
+on prend l'image sufisamment peu couverte 64
+on prend l'image sufisamment peu couverte 65
+on prend l'image sufisamment peu couverte 66
+on prend l'image sufisamment peu couverte 67
+on prend l'image sufisamment peu couverte 69
+on prend l'image sufisamment peu couverte 70
+on prend l'image sufisamment peu couverte 73
+on prend l'image sufisamment peu couverte 74
+on prend l'image sufisamment peu couverte 75
+on prend l'image sufisamment peu couverte 76
+on prend l'image sufisamment peu couverte 77
+on prend l'image sufisamment peu couverte 80
+on prend l'image sufisamment peu couverte 81
+on prend l'image sufisamment peu couverte 82
+on prend l'image sufisamment peu couverte 83
+on prend l'image sufisamment peu couverte 84
+on prend l'image sufisamment peu couverte 85
+on prend l'image sufisamment peu couverte 86
+on prend l'image sufisamment peu couverte 87
+on prend l'image sufisamment peu couverte 93
+on prend l'image sufisamment peu couverte 94
+on prend l'image sufisamment peu couverte 95
+on prend l'image sufisamment peu couverte 96
+on prend l'image sufisamment peu couverte 97
+on prend l'image sufisamment peu couverte 98
+on prend l'image sufisamment peu couverte 101
+on prend l'image sufisamment peu couverte 102
+on prend l'image sufisamment peu couverte 103
+on prend l'image sufisamment peu couverte 104
+on prend l'image sufisamment peu couverte 105
+on prend l'image sufisamment peu couverte 106
+on prend l'image sufisamment peu couverte 107
+on prend l'image sufisamment peu couverte 108
+on conserve automatiquement l'image 119
+on conserve automatiquement l'image 120
+on prend l'image sufisamment peu couverte 124
+on prend l'image sufisamment peu couverte 125
+on prend l'image sufisamment peu couverte 128
+on prend l'image sufisamment peu couverte 129
+on prend l'image sufisamment peu couverte 130
+on prend l'image sufisamment peu couverte 131
+Nombre d'images après filtrage :56</code></pre>
+</div>
+</div>
+<p>A partir de là nous disposons des indices, du masque de la géométrie et ce par surface brûlée.</p>
+<p>Il faut donc maintenant organiser la bancarisation de ces données.</p>
+<p>Le choix s’est porté sur la sauvegarde en fichier netCDF.</p>
+<p>Nous commencons par supprimer les coordonnées et les variables du xarray dont nous n’avons pas l’utilité. Ensuite, nous devons caster l’attribut specifications qui est de type RasterSpec en string sinon nous ne pouvons sauvegarder le fichier en netCDF.</p>
+<p>Une fois ceci fait nous pouvons faire appel à la méthode <code>to_netcdf</code> d’un dataset xarray et ainsi sauvegarder notre dataset xarray en un fichier.</p>
+<p>Nous avons choisi comme nomenclature, sur laquelle il faudra réfléchir :</p>
+<p>SurfaceId_NomDeLaTuile_DateAcquisition.nc</p>
+<p>Il sera important de vérifier que le passage des specifications RasterSpec du xarray en string n’altère pas sa lecture.</p>
+<p>Au niveau de la taille du fichier obtenu, pour une surface de 6 hectares, en sauvegardant 4 indices (le NDVI, le NBR, le NBR+ et le BAIS2) plus le masque de la surface brûlée, nous obtenons pour 13 images sauvegardées un total de 625 Ko.</p>
+<p>Soit environ 2 Ko par indices par scène et par hectare.</p>
+<p>Ainsi si nous sauvegardons en moyenne 15 scènes (images), pour 5 indices et pour 20 000 surfaces d’une taille moyenne de 10 hectares, cela représente un espace disque de 30 Go.</p>
+<div id="2ecf5345" class="cell" data-execution_count="11">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> sauvegarder_netcdf (data_indices, gdf_filtered):</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>  dataset_save <span class="op">=</span> data_indices.drop([c <span class="cf">for</span> c <span class="kw">in</span> data_indices.coords <span class="cf">if</span> <span class="kw">not</span> (c <span class="kw">in</span> [<span class="st">'time'</span>, <span class="st">'lat'</span>, <span class="st">'lon'</span>])])</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>  dataset_save <span class="op">=</span> dataset_save.drop_vars([v <span class="cf">for</span> v <span class="kw">in</span> dataset_save.data_vars <span class="cf">if</span> <span class="kw">not</span> (v <span class="kw">in</span> [<span class="st">'ndvi'</span>, <span class="st">'nbr'</span>, <span class="st">'nbr+'</span>, <span class="st">'bais2'</span>, <span class="st">'mask'</span>])])</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>  dataset_save.attrs[<span class="st">'spec'</span>] <span class="op">=</span> <span class="bu">str</span>(dataset_save.attrs[<span class="st">'spec'</span>])</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>  dataset_save.to_netcdf(<span class="ss">f"</span><span class="sc">{</span><span class="bu">str</span>(gdf_filtered[<span class="st">"surface_id"</span>].iloc[<span class="dv">0</span>])<span class="sc">}</span><span class="ss">_</span><span class="sc">{</span><span class="bu">str</span>(gdf_filtered[<span class="st">"nom"</span>].iloc[<span class="dv">0</span>])<span class="sc">}</span><span class="ss">_</span><span class="sc">{</span><span class="bu">str</span>(gdf_filtered[<span class="st">"date"</span>].iloc[<span class="dv">0</span>])<span class="sc">}</span><span class="ss">.nc"</span>)</span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> dataset_save</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<p>Ici nous mettons quelques snippets de code, pour réaliser des plots. Le premier est un plot une dimension de la série temporelle de ndvi, en calculant sur l’emprise de la géométrie la valeur moyenne (mean) du ndvi.</p>
+<p>Il sera important de se poser la question de quelle grandeur statistique pourra être significative (moyenne, médiane, mode principal après classification) pour aider à la qualification des surfaces brûlées.</p>
+<div id="702a4cb8" class="cell" data-execution_count="12">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>data_1D <span class="op">=</span> dataset[<span class="st">'ndvi'</span>].where(dataset[<span class="st">'mask'</span>]).mean(dim <span class="op">=</span> [<span class="st">"lat"</span>, <span class="st">"lon"</span>])</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(gdf_filter[<span class="st">"date_"</span>].iloc[<span class="dv">0</span>])</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>data_1D.plot()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>2023-09-10</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Benchmarking_librairies_files/figure-html/cell-13-output-2.png" width="589" height="449" class="figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Le deuxième est identique pour le nbr mais nous calculons ici la médiane à la géométrie</p>
+<div id="ceb2ec38" class="cell" data-execution_count="13">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>data_1D_median <span class="op">=</span> dataset[<span class="st">'nbr'</span>].where(dataset[<span class="st">'mask'</span>]).median(dim <span class="op">=</span> [<span class="st">"lat"</span>, <span class="st">"lon"</span>])</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(gdf_filter[<span class="st">"date_"</span>].iloc[<span class="dv">0</span>])</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>data_1D_median.plot()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>2023-09-10</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Benchmarking_librairies_files/figure-html/cell-14-output-2.png" width="600" height="449" class="figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Enfin par la sélection de deux scènes dans la dimension temporelle du xarray, nous pouvons aussi calculer un delta NBR pour la géométrie.</p>
+<div id="26d409fa" class="cell" data-execution_count="14">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Plot d'un delta NBR</span></span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>(data_indices[<span class="st">'nbr'</span>].isel(time<span class="op">=</span><span class="dv">11</span>)<span class="op">-</span>data_indices[<span class="st">'nbr'</span>].isel(time<span class="op">=</span><span class="dv">8</span>)).plot()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Benchmarking_librairies_files/figure-html/cell-15-output-1.png" width="634" height="463" class="figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="conclusion-du-test-de-stac" class="level3">
+<h3 class="anchored" data-anchor-id="conclusion-du-test-de-stac">Conclusion du Test de STAC</h3>
+<p>La spécification STAC et les outils en python pour traiter cette spécification ont donné lieu à des essais plutôt concluants. Il faudra réaliser l’analyse statistique sur un échantillon représentatif des surfaces brûlées et surtout réfléchir à comment réutiliser les indices calculés grâce à ces outils.</p>
+<p>Une solution serait que pour chaque sortie mensuelle de géométries issues de la chaîne des feux, nous intégrions le geopackage de ces données pour obtenir pour chaque forme le fichier netCDF contenant les indicateurs pertinents et le masque de la géométrie. Puis utiliser ces fichiers netCDF et le geopackage (ou le shapefile) des géométries associées pour réaliser une classification grâce à un algorithme random forest (les possibilités d’arbres sont décrites dans le compte-rendu de PoC) afin de déterminer si les formes sont effectivement des surfaces brûlées ou non.</p>
+<p>Une réflexion est à avoir sur la temporalité de détection. En effet le PoC a montré que nous pouvons assez facilement qualifier le fait qu’un évènement a eu lieu qui a amené une évolution du paysage (via les series temporelles des indicateurs). Cependant la coincidence entre date de détection et date de l’évènement n’est pas assurée. Une expertise métier est à avoir pour juger de la pertinence du contrôle qualité.</p>
+</section>
+</section>
+<section id="sisppeo" class="level2">
+<h2 class="anchored" data-anchor-id="sisppeo">SISPPEO</h2>
+<p>SISPPEO est une bibliothèque développée par l’INRAE qui permet de créer des produit appelés produits L3 et de les sauvegarder sous la forme de fichiers NetCDF, à partir d’un reader de données (un reader par couple satellite / correction atmosphérique) en lui appliquant un algorithme donné.</p>
+<p>Une interface en ligne de commande est disponible et il est aussi possible de l’utiliser sous forme de package python.</p>
+<p>Pour le moment SISPPEO peut lire : - Les produits S2 de l’ESA (L1C et L2A) - Les produits L8 de l’USGS (L1C1 et L2C1) - Les produits S2 L2A et L8 L2 GRS - Les produits S2 L2A C2RCC - Les produits S2 L2A MAJA</p>
+<p>Il est possible assez aisément d’écrire un nouveau reader. Le <a href="https://inrae.github.io/SISPPEO/development/add_reader.html">tutoriel SISPPEO</a> à ce propos est bien expliqué et cela prendrait peu de temps (de l’ordre de la journée par nouveau reader à développer).</p>
+<p>Les algorithmes qui nous intéressent concernent le domaine terrestre. Pour le moment seul deux algorithmes pour des produits terrestres sont disponibles dans la librairie SISPPEO :</p>
+<ul>
+<li>Le calcul du NBR</li>
+<li>Le calcul du NDVI</li>
+</ul>
+<p>Il est possible d’écrire et de rajouter de nouveaux algorithmes à SISPPEO. Ils sont sous la forme d’une classe qui comporte deux méthodes à implémenter :</p>
+<ul>
+<li>la méthode <code>__init__</code></li>
+<li>la méthode <code>__call__</code></li>
+</ul>
+<p>Ainsi que trois attributs :</p>
+<ul>
+<li>name</li>
+<li>requested_bands</li>
+<li>meta</li>
+</ul>
+<p>En outre une entrée dans l’un des fichiers YAML de configuration est nécessaire. Le tutoriel pour les développeurs est suffisamment explicite pour réussir relativement aisément à développer de nouveaux algorithmes pour SISPPEO. Cela prendrait de l’ordre de la journée de travail par algorithme.</p>
+<p>Avec SISPPEO il est possible de créer et d’analyser une série temporelle. Et d’effectuer les divers traitement (création d’un produit L3, masques, série temporelle) sur une zone d’intérêt.</p>
+<p>La librairie SISPPEO semble simple d’utilisation mais c’est une librairie créee par des scientifiques pour des scientifiques et qui ne bénéficie pas pour le moment d’une communauté très active. Pour preuve le Github de la libraire n’a que 8 étoiles et 2 fork.</p>
+<p>De même la fréquence d’évolution du code n’est pas élevée. Les dernières grosses modifications de code datent de 2021 :</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="Code_frequency_SISPPEO.png" class="img-fluid figure-img"></p>
+<figcaption>La fréquence d’évolution du code source de SISPPEO</figcaption>
+</figure>
+</div>
+<p>De même une issue (problème rencontré dans le code) ouverte en fin septembre 2023 n’a été résolue à la release suivante qu’en Décembre 2023. Ceci montre qu’il n’y a que peu de développeurs qui maintiennent la librairie et donc que le code source, forcément sujet à des bugs, n’évolue que lentement. Ainsi si un problème est rencontré dans le code source, il sera nécessaire de faire un fork et de faire le travail d’investigation et de correction de code probablement en local.</p>
+<p>SISPPEO est une libraire intéressante et facile d’utilisation mais elle ne bénéficie pas d’une communauté dynamique qui assure que le code soit maintenu activement et rapidement.</p>
+<p>En outre il n’y a pour le moment que peu d’algorithmes disponibles (et donc peu d’indicateurs) contrairement à la facilité de calcul des indicateurs via la spécification STAC et les outils Python associés. Même si le développement de nouveau algorithmes pour SISPPEO n’est en soi pas complexe, cela prendra tout de même du temps. Tandis qu’avec la spécification STAC le calcul est direct et aisé.</p>
+<section id="conclusion-pour-sisppeo" class="level3">
+<h3 class="anchored" data-anchor-id="conclusion-pour-sisppeo">Conclusion pour SISPPEO</h3>
+<p>La comparaison entre SISPPEO, librairie très spécifique, et les outils STAC en Python nous amène à préférer utiliser la spécification STAC, qui en outre devient un standard dans le domaine de la télédétection. En outre la spécification STAC nous permettrait de faire un catalogue STAC sur les données bancarisées pour en faciliter la gestion. Et rendre potentiellement moissonnable de l’extérieur les données d’indices récoltées sur les surfaces brûlées de NC.</p>
+<p>Ainsi outre le temps de prise en main de la librairie (estimé à 2-3 jours pour un développeur confirmé, avec des notions métier de télédétection), un temps d’adaptation de SISPPEO sera nécessaire ce qui rend la librairie moins intéressante.</p>
+<p>Pour toutes ces raisons nous conseillons de ne pas s’appuyer, pour le moment, sur SISPPEO pour la réalisation du contrôle qualité des surfaces brûlées.</p>
+</section>
+</section>
+<section id="api-python-pour-google-earth-engine" class="level2">
+<h2 class="anchored" data-anchor-id="api-python-pour-google-earth-engine">API Python pour Google Earth Engine</h2>
+<p>GEE permet d’accéder à un catalogue d’images satellite et de datasets geospatiaux avec des capacités de calcul et d’analyse importante grâce à Google Cloud Product. C’est un service complet de processing geospatial qui supporte la scalabilité (CLOUD). Google Earth Engine a pour but de : - Fournir une plateforme interactive pour le développement d’algorithmes géospatiaux à l’échelle ; - Permettre une science pilotée par la donnée à haut impact ; - Faire des progrès substantiels sur des défis globaux qui impliquent de larges dataset géospatiaux.</p>
+<p>GEE comprend un catalogue de donnée public, une infrastructure de calcul, des APIs géospatiales et un serveur applicatif interactif.</p>
+<p>Pour l’étude de faisabilité et la comparaison des indices disponibles, APID s’est appuyé sur GEE afin de réaliser les premiers essais. N’étant pas développeurs en JavaScript, et l’OEIL ne visant pas à développer ses compétences en JavaScript mais cherchant plutôt à renforcer son capital de connaissances et compétences en Python, c’est l’API Python de Earth Engine qui est étudiée dans le présent benchmarking.</p>
+<p>L’API Python ne comporte pas la totalité des fonctionnalités de GEE. Elles sont disponibles en JavaScript mais certains objets et méthodes de l’API tel que les Chart (graphiques calculables automatiquement avec l’API GEE JavaScript) ne sont pas disponible avec l’API Python. Aucune information de date de disponibilité n’est donnée pour ces outils non disponibles avec l’API Python.</p>
+<p>Nous allons rapidement détailler les principaux outils et méthodes disponibles avec GEE. Il est à noter que GEE fournit différents environnements de calcul, un environnement interactif pour réaliser la conception des algorithmes et les PoCs, environnement synchrone et en ligne qui fonctionne bien sur des petites requêtes qui se finissent rapidement (avec des réponses de l’ordre de la dizaine de mégabytes de données et des temps de l’ordre de quelques minutes). Pour les besoins de la production, un environnement “BATCH” aussi appelé asynchrone ou “hors-ligne” permet de traiter en parallèle de gros volumes de données. Lors des imports ou des exports de données il est recommandé d’utiliser cet environnement.</p>
+<p>Une authentification est nécessaire pour accéder aux services de l’API GEE.</p>
+<p>Il est aussi important de comprendre que l’API Python qui est une librairie Earth Engine “Client” transforme des analyses géospatiales complexes en requêtes Earth Engine. Il y a donc des objets Earth Engine qui sont des objets côté serveur et des variables et objets côté client. Le distinguo entre les deux est important à faire.</p>
+<p>Nous pouvons manipuler les objets côté serveur en utilisant les objets “proxy” côté client dans nos scripts. Ces objets “proxy” sont simplement des wrappers qui ne contiennent aucune donnée et commence dans le code par <code>ee.</code> et sont des objets de type Earth Engine object. Ainsi comme le client ne sait pas ce qui se passe du côté serveur, les outils de développement tel que les boucles ou encore les conditions ne sont pas à privilégier en codant avec Earth Engine. Un mapping côté serveur est à privilégier. Ce point est important car il oblige à une certaine souplesse d’esprit dans le développement avec GEE étant donné que le développeur a pour habitude généralement d’utiliser les conditions et les boucles pour réaliser ses objectifs.</p>
+<p>Les objets EE représentent des types de données tel que des images raster, des caractéristiques vectorielles ou encore des nombres ou des chaînes de caractères. Les objets et les méthodes qui y sont associées sont combinées dans le workflow du script développé et envoyés côté serveur à Earth Engine pour traitement. Voici les principaux objets et méthodes que nous manipulons dans du code Earth Engine :</p>
+<section id="earth-engine-image" class="level3">
+<h3 class="anchored" data-anchor-id="earth-engine-image">Earth Engine image</h3>
+<p>Les données raster sont représentée par des objets <code>Image</code> dans Earth Engine. Les images sont composées d’une ou plusieurs bandes et chaque bande à son propre nom, son type (data type), son échelle, son masque et sa projection. Chaque image comporte des métadonnées stockées comme un ensemble de propriétés.</p>
+<p>Généralement on construit la donnée image en passant un identifiant d’asset Earth Engine (par exemple l’ID d’une image du catalogue de données) à un <code>ee.Image</code> constructor.</p>
+<p>Une fois la donnée chargée, on peut visualiser sur l’interface Earth Engine ou via des outils Python comme GEEMAP ou IPYLEAFLET les images, afficher les informations et métadonnées de l’image. Ou encore effectuer des opérations mathématiques sur les bandes ou des opérations de logique booléene, conditionnelle ou relationnelle. Différentes autres méthodes relatives au traitement d’images géospatiales sont possibles.</p>
+</section>
+<section id="earth-engine-imagecollection" class="level3">
+<h3 class="anchored" data-anchor-id="earth-engine-imagecollection">Earth Engine ImageCollection</h3>
+<p>C’est une séquence ou stack d’images. Nous pouvons ainsi charger à partir de leurs ID du data catalogue toutes les collections disponibles sur Earth Engine. Sur ces séquences, nous pouvons faire de la visualisation, afficher les informations et métadonnées des ImageCollection, filtrer, effectuer un mapping (une ou plusieurs mêmes opérations sur toutes les images d’une collection). Faire de la réduction, des compositions et mosaiques ou itérer sur une image collection.</p>
+</section>
+<section id="earth-engine-geometry" class="level3">
+<h3 class="anchored" data-anchor-id="earth-engine-geometry">Earth Engine Geometry</h3>
+<p>Le type Earth Engine Geometry permet de gérer les données vectorielles. Plusieurs géométries sont gérées : Les points, les lines (une liste de points) les anneaux linéaires (une ligne fermée) les Polygones et leurs multiples (multipoint, multiline ou multipolygone).</p>
+<p>On peut soit charger des géométries à partir de fichiers sources ou encore créer des géométries de manière interactive en utilisant les outils géométrique de l’éditeur de code de GEE. Ou bien de manière linéaire en fournissant la bonne liste de coordonnées.</p>
+</section>
+<section id="earth-engine-feature-featurecollection" class="level3">
+<h3 class="anchored" data-anchor-id="earth-engine-feature-featurecollection">Earth Engine Feature &amp; FeatureCollection</h3>
+<p>Une caractéristique ou feature dans Earth Engine est défini comme une GeoJSON Feature, c’est à dire un objet avec une propriété de géométrie et d’autres propriétés sous la forme d’un dictionnaire. On peut grouper des features ensemble dans une FeatureCollection pour permettre des opérations sur l’ensemble des features d’une collection tel que filtrer, trier et des outils de rendu.</p>
+<p>Plusieurs méthodes sont disponibles pour les features et FeatureCollection. on peut ainsi visualiser des features, afficher leurs informations et métadonnées, faire des filtres, mapper (appliquer une fonction à l’ensemble des features d’une FeatureCollection par exemple). On peut aussi faire de l’interpolation vecteur to Raster.</p>
+</section>
+<section id="earth-engine-array-chart" class="level3">
+<h3 class="anchored" data-anchor-id="earth-engine-array-chart">Earth Engine Array &amp; Chart</h3>
+<p>Pour représenter des vecteurs 1D, des matrices 2D ou des cubes 3D et des hypercubes de plus grande dimension, Earth Engine utilise le type <code>ee.array</code> qui est une structure de donnée flexible qui malheureusement ne passe pas à l’échelle simplement.</p>
+<p>Enfin, disponible seulement sur l’API JavaScript, les Charts sont l’intégration directe des Google Charts. afin de visualiser de manière efficace des données tabulaires grâce aux fonctions <code>ui.Chart</code>. Nous pouvons grâce aux Chart réaliser les séries temporelles du NDVI (par exemple) sur toutes les géométries d’un shapefile ou d’un geopackage et ainsi obtenir simplement sur les données issues de la chaîne des feux toutes les séries temporelles voulues. Cette fonctionnalité n’est pas disponible avec l’API Python.</p>
+</section>
+<section id="conclusion-de-earth-engine" class="level3">
+<h3 class="anchored" data-anchor-id="conclusion-de-earth-engine">Conclusion de Earth Engine</h3>
+<p>GEE est un outil très puissant pour les études de faisabilité. Sa pérénité et sa maintenance ne fait aucun doute (outil Google) mais il convient plus pour réaliser des essais rapides que pour des déploiement en production. En outre l’API Python ne dispose pas de tous les outils, objets et méthodes contrairement à l’API JavaScript.</p>
+</section>
+</section>
+<section id="conclusion-du-benchmarking" class="level2">
+<h2 class="anchored" data-anchor-id="conclusion-du-benchmarking">Conclusion du Benchmarking</h2>
+<p>A l’issue de ce benchmarking sur les trois outils, nous recommandons d’utiliser la spécification STAC qui permet de calculer aisément les différents indices, de les bancariser de manière efficace et de créer par desssus un catalogue pour faciliter la réutilisation de ces données. En outre développer les compétences à l’Oeil et avec les potentiels partenaires sur cette spécification permet de suivre les standards quant aux données à caractère géographique. Sur la base de ce choix, nous pouvons maintenant réaliser le cahier des charges de déploiement d’une solution de qualification des surfaces brûlées issues de la chaîne des feux.</p>
+</section>
+</section>
+<section id="cahier-des-charges" class="level1">
+<h1>Cahier des charges</h1>
+<section id="introduction-1" class="level2">
+<h2 class="anchored" data-anchor-id="introduction-1">Introduction</h2>
+<p>Sur la base de la spécification STAC et des outils Python (Pystac et Stackstac) associés, nous pouvons maintenant réaliser le cahier des charges de déploiement de la solution retenue de qualification des surfaces brûlées issues de la chaîne des feux.</p>
+<p>Le PoC ayant été concluant, le travail de développement ne sera pas trop important.</p>
+</section>
+<section id="intégration-dans-le-système-de-loeil" class="level2">
+<h2 class="anchored" data-anchor-id="intégration-dans-le-système-de-loeil">Intégration dans le système de l’OEIL</h2>
+<p>Les scripts du PoC sont fournis, il sera nécessaire de les intégrer de manière propre dans un script qui puisse être appelé automatiquement afin de réaliser les traitements avec le moins d’intervention humaine possible.</p>
+<p>Nous estimons à une demie-journée le temps d’échange avec l’OEIL pour bien comprendre la cible et identifier les possibilités d’intégration d’un script réalisé dans les règles de l’art.</p>
+<p>La gestion de l’environnement sera importante mais a bien été dégrossie pendant le PoC. Nous avons spécifié dans le benchmarking l’ensemble des librairies nécessaires au contrôle qualité.</p>
+<p>Enfin une partie intégration des bonnes pratiques de l’OEIL (utilisation de dotenv et d’intake pour gérer les chemins vers les données, les credentials), ainsi qu’un travail de parallélisation du script grâce à dask sera nécessaire. Nous estimons le temps de travail pour cela à 1 jour.</p>
+</section>
+<section id="gestion-de-linformation" class="level2">
+<h2 class="anchored" data-anchor-id="gestion-de-linformation">Gestion de l’information</h2>
+<p>Des suites du PoC, nous avons schématisé les flux de données comme suit :</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="BA_controlQualitypropre.png" class="img-fluid figure-img"></p>
+<figcaption>Schéma des flux de données</figcaption>
+</figure>
+</div>
+<p>Pour bancariser correctement les netCDF, il sera intéressant d’établir un catalogue STAC des données. Nous estimons le temps de travail pour réaliser cela à une à deux journées.</p>
+<p>Comme indiqué dans le point suivant (identification des méthodes de regroupement des indices), il sera nécessaire d’écrire la partie de script qui enrichit la table attributaire des surfaces brûlées. Nous estimons le temps de travail pour cela à 2 jours.</p>
+</section>
+<section id="identification-des-méthodes-de-regroupement-des-indices-à-la-surface-brûlée" class="level2">
+<h2 class="anchored" data-anchor-id="identification-des-méthodes-de-regroupement-des-indices-à-la-surface-brûlée">Identification des méthodes de regroupement des indices à la surface brûlée</h2>
+<p>Afin de disposer des données sources, la bancarisation du calcul d’indices a été imaginée sous la forme de fichier netCDF, comme indiqué dans la partie Benchmarking des trois outils. Cette bancarisation permet de disposer d’un jeu d’indicateurs calculé à l’échelle de la surface brûlee, sur une certaine plage temporelle (dans le PoC nous avions pris un intervalle de 120 jours amont de la date de détection de surface brûlée et 40 jours aval).</p>
+<p>Cette bancarisation permettra de mettre en oeuvre d’autres algorithmes sur la donnée source, si le protocole de photo-interprétation évolue et qu’une partie automatisation s’intègre par la suite. Cette automatisation pourra disposer d’un catalogue de données d’indicateurs.</p>
+<p>Pour autant les résultats du PoC ont mis en lumière qu’un enrichissement de la table attributaire des surfaces brûlées est directement possible. En effet lors de l’étude des 10 surfaces photo-interprétées comme brûlées, des 10 surfaces photo-interprétées comme non-brûlées et des 10 surface en doute, nous avons constaté (de manière purement qualitative, l’échantillon étudié n’est pas suffisamment représentatif pour conclure avec certitude de la validité quantitative de cette méthode) que nous nous y prennions, sur la base des indicateurs disponibles, d’une manière toujours similaire pour interpréter les données :</p>
+<ul>
+<li>Nous recherchions toujours un évènement en amont de la date de détection.</li>
+</ul>
+<p>Un évènement est visible sur les séries temporelles par une brusque modification (une “cassure”) de la valeur de l’indice. Cette variation brusque était toujours significative sur les séries temporelles.</p>
+<p>De manière empirique, nous avons constaté :</p>
+<ul>
+<li>Qu’une diminution sur un intervalle de temps de l’ordre de la dizaine de jours ou moins de plus de 0,3 du ndvi est significative</li>
+<li>Qu’une diminution sur un intervalle de temps de l’ordre de la dizaine de jours ou moins de plus de 0,3 du nbr est significative</li>
+<li>Qu’une augmentation sur un intervalle de temps de l’ordre de la dizaine de jours ou moins de plus de 0,3 du nbr+ ou du bais2 est significative</li>
+</ul>
+<p>Ces variations “brusques” indiquent toujours qu’il s’est passé quelque chose. Mais cet évènement n’est pas forcément un feu, cela peut être un coup de sécheresse, ou bien une récolte sur un champ. Pour discriminer de manière plus sûre que l’évènement est bien un feu, nous nous appuyons ensuite sur le delta NBR. En effet, sur un intervalle de temps le plus centré autour de la date de la cassure, nous traçons les cartes 2D du deltaNBR et retrouvons la géométrie lorsque l’évènement est un feu.</p>
+<p>Puis, dans l’interprétation des résultats du PoC, nous nous appuyons sur des cartes colorées du NDVI. Une évolution confirme qu’un évènement a eu lieu. Si post évènement le NDVI est bas à l’échelle de la géométrie (inférieur à 0,2) alors nous pouvons être quasiment certains que l’évènement était bien un feu.</p>
+<p>Ainsi nous recommandons d’effectuer une réelle étude statistique sur un échantillon plus représentatif des biômes et des saisons de Nouvelle-Calédonie. Cette étude statistique permettra d’identifier de manière précise les seuils de qualification de présence ou non d’un évènement (à partir de la détection d’une “cassure” sur une ou plusieurs séries temporelles) mais aussi de déterminer si cet évènement est bien un feu à partir des valeurs absolues des indices.</p>
+<p>Cette étude statistique pourra s’appuyer sur les scripts du PoC réalisé.</p>
+<p>Une fois des seuils confirmés par étude statistique, il sera alors possible d’enrichir la table attributaire des surfaces brûlées obtenue par la chaîne des feux de la manière suivante, pour chaque indice jugé pertinent grâce à la présente étude et grâce à l’étude statistique (à réaliser) :</p>
+<ul>
+<li>Delta maximum de l’indice sur une période de temps inférieure à 15 jours</li>
+<li>Date d’occurence de ce delta</li>
+<li>Intervalle de temps exact du delta</li>
+<li>Delta maximum de l’indice sur une période de temps inférieure à 1 mois (afin de s’assurer que la couverture nuageuse ne bloque pas l’étude)</li>
+<li>Date d’occurence de ce delta</li>
+<li>Intervalle de temps exact du delta</li>
+<li>Valeur médiane de l’indice à la géométrie à la date de détection de la surface brûlée</li>
+<li>Valeur moyenne de l’indice à la géométrie à la date de détection de la surface brûlée</li>
+<li>Valeur modale (après traitement par classe) de l’indice à la géométrie à la date de détection de la surface brûlée</li>
+</ul>
+<p>Cela enrichit la table attributaire de 9 colonne par indice.</p>
+<p>Nous estimons le développement du script Python réalisant cet enrichissement à environ 2 jours. Tests compris.</p>
+</section>
+<section id="estimation-des-coûts-de-mise-en-oeuvre" class="level2">
+<h2 class="anchored" data-anchor-id="estimation-des-coûts-de-mise-en-oeuvre">Estimation des coûts de mise en oeuvre</h2>
+<p>En s’appuyant sur le travail réalisé pendant le PoC, il sera alors possible de réaliser l’intégration des scripts dans le système de l’OEIL en 6 jours au total. Nous pouvons prendre une marge de sécurité d’une journée pour assurer la réalisation. Ainsi nous estimons qu’en 7 jours maximum l’intégration est possible.</p>
+<p>Cette estimation s’appuie sur un profil de développeur experimenté. Le langage retenu est bien entendu Python et nous ne prennons pas en considération le temps de développement d’interfaces utilisateurs. Les scripts sont supposés tourner en automatique, avec le moins d’intervention humaine possible.</p>
+</section>
+<section id="limites" class="level2">
+<h2 class="anchored" data-anchor-id="limites">Limites</h2>
+<p>Les limites d’une telle méthode, à vérifier, sont les temps mis pour réaliser les différents traitements. Nous n’avons pas parallélisé le travail et par surface brûlée, sur un poste personnel, nous mettions aux alentours d’une minute à réaliser le traitement de la stack et de deux à trois minutes pour réaliser les plots des séries temporelles et des cartes 2D de couleur des indices.</p>
+<p>Il sera important de faire un test sur un système permettant la parallèlisation.</p>
+</section>
+<section id="conclusion-du-cahier-des-charges" class="level2">
+<h2 class="anchored" data-anchor-id="conclusion-du-cahier-des-charges">Conclusion du Cahier des charges</h2>
+<p>Le Cahier des charges amène à estimer à 7 jours le temps de développement nécessaire pour intégrer les résultats de cette étude dans le système de l’OEIL.</p>
+<p>Pour autant, avant toute intégration, une étude statistique est conseillée pour réfléchir à des seuils pertinents pour les différents indicateurs et leurs utilisation. En outre la question de l’algorithme de classification se pose aussi. Le PoC réalisé semble montrer qu’un algorithme de type forêt aléatoire semble plutôt bien indiqué pour réaliser la classification des surfaces détectées par la chaîne des feux. Pour autant, c’est l’algorithme utilisé dans la chaîne des feux même et il serait potentiellement intéressant de réfléchir à un autre type d’algorithme pour cette classification afin de varier de méthode.</p>
+<p>La partie étude statistique et reflexion sur un algorithme cible pour la classification n’est pas compté dans les 7 jours de développement évoqués plus haut.</p>
+</section>
+</section>
+<section id="conclusion-générale" class="level1">
+<h1>Conclusion générale</h1>
+<p>Nous pouvons conclure qu’au regard du PoC réalisé, plusieurs pistes intéressantes de réutilisation de divers indicateurs sont apparues, avec une clarification quant à la bancarisation de ces données.</p>
+<p>Nous regrettons de n’avoir pas eu le temps de réfléchir à l’intégration de données exogènes (tel que celles d’un MOS à jour). Pour autant l’étude réalisée, bien que qualitative, donne des indications fortes pour la suite.</p>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    text: function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+  function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+    const config = {
+      allowHTML: true,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start',
+    };
+    if (contentFn) {
+      config.content = contentFn;
+    }
+    if (onTriggerFn) {
+      config.onTrigger = onTriggerFn;
+    }
+    if (onUntriggerFn) {
+      config.onUntrigger = onUntriggerFn;
+    }
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      return note.innerHTML;
+    });
+  }
+  const xrefs = window.document.querySelectorAll('a.quarto-xref');
+  const processXRef = (id, note) => {
+    // Strip column container classes
+    const stripColumnClz = (el) => {
+      el.classList.remove("page-full", "page-columns");
+      if (el.children) {
+        for (const child of el.children) {
+          stripColumnClz(child);
+        }
+      }
+    }
+    stripColumnClz(note)
+    if (id === null || id.startsWith('sec-')) {
+      // Special case sections, only their first couple elements
+      const container = document.createElement("div");
+      if (note.children && note.children.length > 2) {
+        container.appendChild(note.children[0].cloneNode(true));
+        for (let i = 1; i < note.children.length; i++) {
+          const child = note.children[i];
+          if (child.tagName === "P" && child.innerText === "") {
+            continue;
+          } else {
+            container.appendChild(child.cloneNode(true));
+            break;
+          }
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(container);
+        }
+        return container.innerHTML
+      } else {
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        return note.innerHTML;
+      }
+    } else {
+      // Remove any anchor links if they are present
+      const anchorLink = note.querySelector('a.anchorjs-link');
+      if (anchorLink) {
+        anchorLink.remove();
+      }
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(note);
+      }
+      // TODO in 1.5, we should make sure this works without a callout special case
+      if (note.classList.contains("callout")) {
+        return note.outerHTML;
+      } else {
+        return note.innerHTML;
+      }
+    }
+  }
+  for (var i=0; i<xrefs.length; i++) {
+    const xref = xrefs[i];
+    tippyHover(xref, undefined, function(instance) {
+      instance.disable();
+      let url = xref.getAttribute('href');
+      let hash = undefined; 
+      if (url.startsWith('#')) {
+        hash = url;
+      } else {
+        try { hash = new URL(url).hash; } catch {}
+      }
+      if (hash) {
+        const id = hash.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note !== null) {
+          try {
+            const html = processXRef(id, note.cloneNode(true));
+            instance.setContent(html);
+          } finally {
+            instance.enable();
+            instance.show();
+          }
+        } else {
+          // See if we can fetch this
+          fetch(url.split('#')[0])
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.getElementById(id);
+            if (note !== null) {
+              const html = processXRef(id, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      } else {
+        // See if we can fetch a full url (with no hash to target)
+        // This is a special case and we should probably do some content thinning / targeting
+        fetch(url)
+        .then(res => res.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const htmlDoc = parser.parseFromString(html, "text/html");
+          const note = htmlDoc.querySelector('main.content');
+          if (note !== null) {
+            // This should only happen for chapter cross references
+            // (since there is no id in the URL)
+            // remove the first header
+            if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+              note.children[0].remove();
+            }
+            const html = processXRef(null, note);
+            instance.setContent(html);
+          } 
+        }).finally(() => {
+          instance.enable();
+          instance.show();
+        });
+      }
+    }, function(instance) {
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            div.style.left = 0;
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+        // Handle positioning of the toggle
+    window.addEventListener(
+      "resize",
+      throttle(() => {
+        elRect = undefined;
+        if (selectedAnnoteEl) {
+          selectCodeLines(selectedAnnoteEl);
+        }
+      }, 10)
+    );
+    function throttle(fn, ms) {
+    let throttle = false;
+    let timer;
+      return (...args) => {
+        if(!throttle) { // first call gets through
+            fn.apply(this, args);
+            throttle = true;
+        } else { // all the others get throttled
+            if(timer) clearTimeout(timer); // cancel #2
+            timer = setTimeout(() => {
+              fn.apply(this, args);
+              timer = throttle = false;
+            }, ms);
+        }
+      };
+    }
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
