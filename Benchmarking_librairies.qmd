@@ -260,6 +260,11 @@ L'étude des données brutes (bande "red") nous montre que nous avons des valeur
 
 Afin de résoudre cette problématique et de ne pas avoir des valeurs de ndvi ou d'autres indices abbérantes (nous obtenions des valeurs de ndvi en-dehors de la plage -1 à +1), nous avons donc corrigé l'offset de -0.1 pour toutes les bandes.
 
+Un point d'attention est à avoir sur cet offset. La formule à appliquer est :
+L2A_SRi = (L2A_DNi + BOA_ADD_OFFSETi) / QUANTIFICATION_VALUEi
+
+Pour autant nous n'avons pas trouvé les différents éléments de cette formule. Un travail d'adaptation du code sera à effectuer. Nous n'avons trouvé qu'un offset de -0,1 sur les bandes et une mise à l'échelle de 0,0001.
+
 Ensuite seulement nous pouvons calculer nos indices.
 
 ```{python}

@@ -171,7 +171,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h3 class="anchored" data-anchor-id="test-de-stac">Test de STAC</h3>
 <p>Nous avons réalisé des tests pour le benchmarking de nos librairies. Le test de STAC est concluant. La réalisation d’une collecte d’indices grâce à pystac_client et stackstac est faisable plutôt simplement.</p>
 <p>Les snippets de code suivants le réalise.</p>
-<div id="44dc73db" class="cell" data-execution_count="1">
+<div id="d1a153d0" class="cell" data-execution_count="1">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co">"""</span></span>
@@ -187,7 +187,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <pre><code>'\n! pip install pystac_client\n! pip install stackstac\n! pip install geopandas\n! pip install rioxarray\n! pip install rasterio\n! pip install netCDF4\n'</code></pre>
 </div>
 </div>
-<div id="ab0e9c73" class="cell" data-execution_count="2">
+<div id="abbf3111" class="cell" data-execution_count="2">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pystac_client <span class="im">import</span> Client <span class="im">as</span> psc</span>
@@ -206,7 +206,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </details>
 </div>
 <p>On va aller chercher les tuiles qui appartiennent à la collection <code>sentinel-2-l2a</code>, soit des réflectances de surface corrigées des effets atmosphériques. De même on définit nos CRS de travail.</p>
-<div id="81e129f9" class="cell" data-execution_count="3">
+<div id="1506a649" class="cell" data-execution_count="3">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>api_url <span class="op">=</span> <span class="st">"https://earth-search.aws.element84.com/v1"</span></span>
@@ -218,7 +218,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </details>
 </div>
 <p>On va aussi charger les géométries qui nous intéressent, les surfaces brûlées détectées par la chaîne des feux, sur les mois de septembre et octobre 2023. Le chemin d’accès pour les test était un chemin d’accès local. Cependant pour travailler proporement il sera nécessaire d’utiliser intake et dotenv : - Intake permettra d’ouvrir le catalogue des géométries en se connectant à la base de données postgres de l’OEIL. - Dotenv permettra de gérer proprement les credentials et les chemins d’accès.</p>
-<div id="47ef1aff" class="cell" data-execution_count="4">
+<div id="126794fc" class="cell" data-execution_count="4">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>local_path_to_BA <span class="op">=</span> <span class="vs">r"C:\Users\Administrateur\OneDrive\Documents\APID\CLIENTS\OEIL\SISSPEO\datas\sentinel_surfaces_detectees_sept_oct_2023.gpkg"</span></span>
@@ -241,7 +241,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </details>
 </div>
 <p>Nous avons une liste de polygones fournie par l’OEIL qui ont déjà été caractérisés par photointerprétation que nous allons utiliser pour effectuer des tests. Nous définissons les les dictionnaires de géométries à partir de cette liste de polygones.</p>
-<div id="6b720dea" class="cell" data-execution_count="5">
+<div id="27d2fecf" class="cell" data-execution_count="5">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>surfaces_id <span class="op">=</span> {</span>
@@ -260,7 +260,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </details>
 </div>
 <p>Nous allons maintenant pouvoir faire les tests sur chaque surfaces brûlées. Pour cela nous commencons par récupérer la bounding box du geodataframe filtré sur une géométrie. Nous récupérons les scènes Sentinel-2 L2A ayant moins d’un certain couvert nuageux (cc pour cloud cover) grâce à pystac_client. Et nous en concevont une stack dont nous vérifions le crs.</p>
-<div id="371b8667" class="cell" data-execution_count="6">
+<div id="7f64ae1b" class="cell" data-execution_count="6">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> construct_stack(gdf_filtrer, cc, URL, collection, dates):</span>
@@ -308,7 +308,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>Ce test sur le couvert nuageux est ce qui prend le plus de temps dans le preprocessing des données. Nous sommes sur des temps de traitement de l’ordre de la minute sur un monothread avec un processeur à 2,4 GHz et avec 16 Go de RAM. Il est donc important de réfléchir à la sélection des dates qui seront utiles pour déterminer si la surface est brûlée ou non.</p>
 <p>Pour filtrer 13 images d’une stack sentinel comprenant 27 scènes, nous avons mis exactement 40 secondes pour une surface de 6 hectares. Sur la configuration décrite précédemment.</p>
 <p>Sur ce point, la question d’images de références par type d’écosystèmes peut être intéressant. En effet en disposant d’images de références de l’intégralité de la NC, nous pourrions éviter de conserver 13 scènes et n’en conserver que 2 ou trois.</p>
-<div id="01af1043" class="cell" data-execution_count="7">
+<div id="9da82843" class="cell" data-execution_count="7">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> select_scenes_without_cc(gdf_filter, stack):</span>
@@ -346,8 +346,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>On peut maintenant faire notre calcul d’indices. Les indices sont définis dans le document d’étude de faisabilité réalisé précédemment. Dans cet exemple on ne calcule que les indices ndvi, nbr, nbr+, bais2.</p>
 <p>L’étude des données brutes (bande “red”) nous montre que nous avons des valeurs de réflectances négatives. C’est un point de vigilance à adresser. Après consultation des métadonnées nous nous sommes aperçus qu’un offset de -0.1 était appliqué aux bandes.</p>
 <p>Afin de résoudre cette problématique et de ne pas avoir des valeurs de ndvi ou d’autres indices abbérantes (nous obtenions des valeurs de ndvi en-dehors de la plage -1 à +1), nous avons donc corrigé l’offset de -0.1 pour toutes les bandes.</p>
+<p>Un point d’attention est à avoir sur cet offset. La formule à appliquer est : L2A_SRi = (L2A_DNi + BOA_ADD_OFFSETi) / QUANTIFICATION_VALUEi</p>
+<p>Pour autant nous n’avons pas trouvé les différents éléments de cette formule. Un travail d’adaptation du code sera à effectuer. Nous n’avons trouvé qu’un offset de -0,1 sur les bandes et une mise à l’échelle de 0,0001.</p>
 <p>Ensuite seulement nous pouvons calculer nos indices.</p>
-<div id="363bc275" class="cell" data-execution_count="8">
+<div id="bc743faa" class="cell" data-execution_count="8">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> calcul_indices (data_to_keep):</span>
@@ -371,7 +373,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </details>
 </div>
 <p>On va maintenant faire un masque de la géométrie et le rajouter à notre dataset.</p>
-<div id="0a3b7295" class="cell" data-execution_count="9">
+<div id="a0de82a8" class="cell" data-execution_count="9">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> create_mask(dataset, gdf):</span>
@@ -391,7 +393,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>On va faire tourner toutes ces fonctions pour réaliser les traitements. C’est un test sur une géométrie que l’on sait brûlée (surface_id = 359594) pour poser les idées et montrer les exemples.</p>
 <p>On prend un cloud cover (cc) de 100 pour que le premier filtre sur la requête ne soit pas du tout restrictif.</p>
 <p>Les résultats des tests effectués sur 10 surfaces brûlées, 10 surfaces considérées comme nous brûlées et 10 surface en doute après la photo-interprétation sont organisées dans un autre document.</p>
-<div id="3329bd1d" class="cell" data-execution_count="10">
+<div id="086748b0" class="cell" data-execution_count="10">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>gdf, dates <span class="op">=</span> preprocess_geometries_df(BurnedArea_data)</span>
@@ -402,7 +404,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>dataset <span class="op">=</span> create_mask(data_indices, gdf_filter)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output cell-output-stderr">
-<pre><code>C:\Users\Administrateur\AppData\Local\Temp\ipykernel_26752\99496939.py:12: FutureWarning: Currently, index_parts defaults to True, but in the future, it will default to False to be consistent with Pandas. Use `index_parts=True` to keep the current behavior and True/False to silence the warning.
+<pre><code>C:\Users\Administrateur\AppData\Local\Temp\ipykernel_19460\99496939.py:12: FutureWarning: Currently, index_parts defaults to True, but in the future, it will default to False to be consistent with Pandas. Use `index_parts=True` to keep the current behavior and True/False to silence the warning.
   gdf = gdf.explode()
 E:\APP_GLOBAL\PYTHON\Lib\site-packages\stackstac\prepare.py:408: UserWarning: The argument 'infer_datetime_format' is deprecated and will be removed in a future version. A strict version of it is now the default, see https://pandas.pydata.org/pdeps/0004-consistent-to-datetime-parsing.html. You can safely remove this argument.
   times = pd.to_datetime(</code></pre>
@@ -482,7 +484,7 @@ Nombre d'images après filtrage :56</code></pre>
 <p>Au niveau de la taille du fichier obtenu, pour une surface de 6 hectares, en sauvegardant 4 indices (le NDVI, le NBR, le NBR+ et le BAIS2) plus le masque de la surface brûlée, nous obtenons pour 13 images sauvegardées un total de 625 Ko.</p>
 <p>Soit environ 2 Ko par indices par scène et par hectare.</p>
 <p>Ainsi si nous sauvegardons en moyenne 15 scènes (images), pour 5 indices et pour 20 000 surfaces d’une taille moyenne de 10 hectares, cela représente un espace disque de 30 Go.</p>
-<div id="2ecf5345" class="cell" data-execution_count="11">
+<div id="6e43fc1e" class="cell" data-execution_count="11">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> sauvegarder_netcdf (data_indices, gdf_filtered):</span>
@@ -495,7 +497,7 @@ Nombre d'images après filtrage :56</code></pre>
 </div>
 <p>Ici nous mettons quelques snippets de code, pour réaliser des plots. Le premier est un plot une dimension de la série temporelle de ndvi, en calculant sur l’emprise de la géométrie la valeur moyenne (mean) du ndvi.</p>
 <p>Il sera important de se poser la question de quelle grandeur statistique pourra être significative (moyenne, médiane, mode principal après classification) pour aider à la qualification des surfaces brûlées.</p>
-<div id="702a4cb8" class="cell" data-execution_count="12">
+<div id="ee531cc2" class="cell" data-execution_count="12">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>data_1D <span class="op">=</span> dataset[<span class="st">'ndvi'</span>].where(dataset[<span class="st">'mask'</span>]).mean(dim <span class="op">=</span> [<span class="st">"lat"</span>, <span class="st">"lon"</span>])</span>
@@ -514,7 +516,7 @@ Nombre d'images après filtrage :56</code></pre>
 </div>
 </div>
 <p>Le deuxième est identique pour le nbr mais nous calculons ici la médiane à la géométrie</p>
-<div id="ceb2ec38" class="cell" data-execution_count="13">
+<div id="4c5bd1ed" class="cell" data-execution_count="13">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>data_1D_median <span class="op">=</span> dataset[<span class="st">'nbr'</span>].where(dataset[<span class="st">'mask'</span>]).median(dim <span class="op">=</span> [<span class="st">"lat"</span>, <span class="st">"lon"</span>])</span>
@@ -533,7 +535,7 @@ Nombre d'images après filtrage :56</code></pre>
 </div>
 </div>
 <p>Enfin par la sélection de deux scènes dans la dimension temporelle du xarray, nous pouvons aussi calculer un delta NBR pour la géométrie.</p>
-<div id="26d409fa" class="cell" data-execution_count="14">
+<div id="36244c26" class="cell" data-execution_count="14">
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb19"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Plot d'un delta NBR</span></span>
