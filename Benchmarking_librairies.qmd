@@ -272,7 +272,7 @@ def calcul_indices (data_to_keep):
   """
   On calcule les indices à partir de la stack data_to_keep
   """
-  data_indices = data_to_keep.sel(band=["blue","rededge2", "rededge3", "green","red", "nir","nir08","swir22", "scl"]).to_dataset(dim='band')
+  data_indices = data_to_keep.sel(band=["blue","rededge2", "rededge3", "green","red", "nir","nir08","swir22","swir16", "scl"]).to_dataset(dim='band')
 
   for elt in data_indices.data_vars :
     data_indices[elt] = data_indices[elt] + 0.1 #Correction de l'offset
