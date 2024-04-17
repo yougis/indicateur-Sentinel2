@@ -422,97 +422,112 @@ L'algorithme doit :
 
 L'input des géométries vecteurs de l'algorithme doit être récupéré dans la base de donnée de l'OEIL en respectant les bonnes pratiques de l'OEIL. Il doit y avoir possiblité de traiter plusieurs fichiers en entrée de manière séquentielle.
 
+La connexion à un catalogue STAC doit être robuste, le nombre de scènes obtenues lors de la connexion au catalogue STAC doit être rendu disponible dans des logs. De même le nombre de scènes restantes par géométries après filtrage du couvert nuageux doit être rendu disponible dans des logs. La présence ou l'absence de la scène à la date d'acquisition de la surface brûlée par la chaîne des feux doit être indiquée dans les logs.
 
-Nous estimons à une demie-journée le temps d'échange avec l'OEIL pour bien comprendre la cible et identifier les possibilités d'intégration d'un script réalisé dans les règles de l'art.
+L'enrichissement de la table attributaire des géométries devra être discutée avec l'OEIL pour la gestion de l'information. La bancarisation des DataArray en netCDF devra se faire selon une nomenclature discutée avec l'OEIL.
 
-La gestion de l'environnement sera importante mais a bien été dégrossie pendant le PoC. Nous avons spécifié dans le benchmarking l'ensemble des librairies nécessaires au contrôle qualité. 
+## Gestion des erreurs et des exceptions
 
-Enfin une partie intégration des bonnes pratiques de l'OEIL (utilisation de dotenv pour gérer les chemins d'accès vers les données stockées en local ou à stocker, les credentials), ainsi qu'un travail de parallélisation du script grâce à dask sera nécessaire. Nous estimons le temps de travail pour cela à 1 jour.
+Les erreurs potentielles tel que l'absence de données raster sources dans le catalogue STAC source ou encore la situation exceptionnelle ou aucune scène n'est exploitable dans l'intervalle des dates considérées doivent être gérées et ne pas interrompre l'exécution de l'algorithme. Ce genre d'exceptions qui impliquent l'absence d'enrichissement possible de la table attributaire de la géométrie traitée doit être signalée dans les logs. Un rapport en fin de traitement d'un fichier shapefile ou geopackage des géométries vecteurs des surfaces brûlées doit faire remonter toutes les erreurs ou exceptions potentielles.
 
-La question du déploiement avec `Docker` sera à étudier.
+## Exigences de performance
 
-La fonction de lecture des géométries part du geodataframe pour en récupérer la date. Il faudra réaliser une fonction englobante qui parcourt les lignes du geodataframe pour effectuer les traitements sur chaque surface brûlée du gpkg en input. Cette fonction englobante qui appellera toutes les autres fonctions devra être parallélisée au maximum etant donné qu'elle fera appel à une boucle pour réaliser le parcours du geodataframe.
+L'exécution de l'algorithme doit se faire dans un laps de temps suffisamment court pour traiter l'intégralité des surfaces brûlées sur un mois en un temps de l'ordre de l'heure. Cela signifie que le temps de traitement d'une surface brûlée pour bancarisation des xarray et enrichissement de la table attributaire doit être de l'ordre de la dizaine de secondes. En terme d'utilisation des ressources, l'algorithme doit pouvoir s'exécuter sans surcharger la RAM disponible.
 
-A l'issue de l'appel des fonctions de prétraitement, nous récupérons une `stack` qui contient toutes les scènes associées à une bounding box d'une géométrie et sur un intervalle de date que nous avons pris par défaut à 120 jours avant la date de détection de la surface brûlée par la chaîne des feux, et 60 jours après. Il ne faudra surtout pas filtrer sur le couvert nuageux et donc supprimer l'option `query` dans l'appel `client.search`. L'intervalle temporel sera à préciser à l'issue de l'étude statistique.
+# Spécifications techniques
 
+## Langage de Programmation
 
+Le langage choisi pour l'algorithme est Python. Les librairies utilisées dans le POC fournissent l'intégralité des outils pour répondre aux spécifications fonctionnelles. Les bonnes pratiques de Python (PEP) doivent être respectées. 
 
-## Gestion de l'information
+## Utilisation de la parallélisation et de la distribution
 
-Des suites du PoC, nous avons schématisé les flux de données comme suit :
+L'utilisation de `Dask` est souhaitée pour répondre aux exigences de performance. Le cluster de calcul disponible à l'OEIL est **à remplir par l'OEIL**.
 
-![Schéma des flux de données](BA_controlQualitypropre.png)
+## Intégration dans l'architecture existante
 
-Pour bancariser correctement les netCDF, il sera intéressant d'établir un catalogue STAC des données. Nous estimons le temps de travail pour réaliser cela à une à deux journées.
+**à remplir par l'OEIL**
 
-Comme indiqué dans le point suivant (identification des méthodes de regroupement des indices), il sera nécessaire d'écrire la partie de script qui enrichit la table attributaire des surfaces brûlées. Nous estimons le temps de travail pour cela à 2 jours.
+## Utilisation de solution de containerisation
 
-L'établissement d'un catalogue STAC peut s'appuyer sur la page de tutoriel [suivante](https://stacspec.org/en/tutorials/2-create-stac-catalog-python/).
+`Docker` est la solution retenue pour la gestion des conteneurs.
 
-## Identification des méthodes de regroupement des indices à la surface brûlée
+## Utlisation de Pystac et Stackstac
 
-Afin de disposer des données sources, la bancarisation du calcul d'indices a été imaginée sous la forme de fichier netCDF, comme indiqué dans la partie Benchmarking des trois outils. Cette bancarisation permet de disposer d'un jeu d'indicateurs calculé à l'échelle de la surface brûlee, sur une certaine plage temporelle (dans le PoC nous avions pris un intervalle de 120 jours amont de la date de détection de surface brûlée et 40 jours aval). 
+Pour la manipulation des données géospatiales, il est demandé d'utiliser Pystac et Stackstac qui permettent de se connecter à un catalogue STAC et de réaliser des géotraitements sur les données de manière efficace. Le POC réalisé par l'OEIL et ses partenaires fournit les snippets de code nécessaire pour la réalisation des fonctionnalités techniques avec ces librairies.
 
-Cette bancarisation permettra de mettre en oeuvre d'autres algorithmes sur la donnée source, si le protocole de photo-interprétation évolue et qu'une partie automatisation s'intègre par la suite. Cette automatisation pourra disposer d'un catalogue de données d'indicateurs.
+# Architecture
 
-Pour autant les résultats du PoC ont mis en lumière qu'un enrichissement de la table attributaire des surfaces brûlées est directement possible. En effet lors de l'étude des 10 surfaces photo-interprétées comme brûlées, des 10 surfaces photo-interprétées comme non-brûlées et des 10 surface en doute, nous avons constaté (de manière purement qualitative, l'échantillon étudié n'est pas suffisamment représentatif pour conclure avec certitude de la validité quantitative de cette méthode) que nous nous y prennions, sur la base des indicateurs disponibles, d'une manière toujours similaire pour interpréter les données :
+## Description de l'architecture logicielle de l'algorithme
 
-- Nous recherchions toujours un évènement en amont de la date de détection.
+L'algorithme doit s'inspirer des scripts développés pour le POC afin de réaliser :
 
-Un évènement est visible sur les séries temporelles par une brusque modification (une "cassure") de la valeur de l'indice. Cette variation brusque était toujours significative sur les séries temporelles. 
+- La lecture et les prétraitements sur le fichier des géométries vecteurs des surfaces brûlées potentielles en entrée
+- Les connexions au catalogue STAC pour chaque surface brûlée
+- Les géotraitements nécessaires
+- La bancarisation des informations obtenues et des données sources
 
-De manière empirique, nous avons constaté :
+Une proposition est à faire pour la décomposition en modules et en composants si nécessaire.
 
-- Qu'une diminution sur un intervalle de temps de l'ordre de la dizaine de jours ou moins de plus de 0,3 du ndvi est significative
-- Qu'une diminution sur un intervalle de temps de l'ordre de la dizaine de jours ou moins de plus de 0,3 du nbr est significative
-- Qu'une augmentation sur un intervalle de temps de l'ordre de la dizaine de jours ou moins de plus de 0,3 du nbr+ ou du bais2 est significative
+# Tests et validation
 
-Ces variations "brusques" indiquent toujours qu'il s'est passé quelque chose. Mais cet évènement n'est pas forcément un feu, cela peut être un coup de sécheresse, ou bien une récolte sur un champ. Pour discriminer de manière plus sûre que l'évènement est bien un feu, nous nous appuyons ensuite sur le delta NBR. En effet, sur un intervalle de temps le plus centré autour de la date de la cassure, nous traçons les cartes 2D du deltaNBR et retrouvons la géométrie lorsque l'évènement est un feu.
+Une stratégie de tests doit être proposée pour vérifier le bon fonctionnement de l'algorithme. Des tests unitaires, d'intégration et des tests systèmes doivent être réalisé pour assurer la réponse optimale au présent cahier des charges.
 
-Puis, dans l'interprétation des résultats du PoC, nous nous appuyons sur des cartes colorées du NDVI. Une évolution confirme qu'un évènement a eu lieu. Si post évènement le NDVI est bas à l'échelle de la géométrie (inférieur à 0,2) alors nous pouvons être quasiment certains que l'évènement était bien un feu.
+# Gestion de projet
 
-Ainsi nous recommandons d'effectuer une réelle étude statistique sur un échantillon plus représentatif des biômes et des saisons de Nouvelle-Calédonie. Cette étude statistique permettra d'identifier de manière précise les seuils de qualification de présence ou non d'un évènement (à partir de la détection d'une "cassure" sur une ou plusieurs séries temporelles) mais aussi de déterminer si cet évènement est bien un feu à partir des valeurs absolues des indices.
+## Méthodologie de développement
 
-Cette étude statistique pourra s'appuyer sur les scripts du PoC réalisé.
+Il est demandé de respecter la méthodologie de gestion de projet "Agile". Sur la base du présent cahier des charges, une phase de lancement de projet permettra de :
 
-Une fois des seuils confirmés par étude statistique, il sera alors possible d'enrichir la table attributaire des surfaces brûlées obtenue par la chaîne des feux de la manière suivante, pour chaque indice jugé pertinent grâce à la présente étude et grâce à l'étude statistique (à réaliser) :
+- Préparer conjointement avec l'OEIL la "product backlog"
+- Valider le "sprint backlog" avec l'OEIL
+- Préparer les environnements de développement
+- Etablir la gouvernance de projet
 
-- Delta maximum de l'indice sur une période de temps inférieure à 15 jours
-- Date d'occurence de ce delta
-- Intervalle de temps exact du delta
-- Delta maximum de l'indice sur une période de temps inférieure à 1 mois (afin de s'assurer que la couverture nuageuse ne bloque pas l'étude)
-- Date d'occurence de ce delta
-- Intervalle de temps exact du delta 
-- Valeur médiane de l'indice à la géométrie à la date de détection de la surface brûlée
-- Valeur moyenne de l'indice à la géométrie à la date de détection de la surface brûlée
-- Valeur modale (après traitement par classe) de l'indice à la géométrie à la date de détection de la surface brûlée
+Puis sur chaque Sprint est demandé la livraison :
 
-Cela enrichit la table attributaire de 9 colonne par indice.
+- Le détail des développements livrés
+- Les scripts de construction et de déploiement
+- Le code des développement
+- Les spécifications afférentes au développement
+- Les tests unitaires et fonctionnels
+- Le rapport d'exécutiond es tests unitaires
 
-Nous estimons le développement du script Python réalisant cet enrichissement à environ 2 jours. Tests compris.
+Un gestionnaire de version est fourni par l'OEIL (Azure DevOps). Une documentation utilisateur est demandée si nécessaire.
 
-## Estimation des coûts de mise en oeuvre
+Une Validation d'Aptitude au Bon Fonctionnement sera opérée par l'OEIL pour recette définitive de l'algorithme.
 
-En s'appuyant sur le travail réalisé pendant le PoC, il sera alors possible de réaliser l'intégration des scripts dans le système de l'OEIL en 6 jours au total. Nous pouvons prendre une marge de sécurité d'une journée pour assurer la réalisation. Ainsi nous estimons qu'en 7 jours maximum l'intégration est possible.
+# Planning 
 
-Cette estimation s'appuie sur un profil de développeur experimenté. Le langage retenu est bien entendu Python et nous ne prennons pas en considération le temps de développement d'interfaces utilisateurs. Les scripts sont supposés tourner en automatique, avec le moins d'intervention humaine possible.
+**à remplir par l'OEIL**
 
-## Limites
+# Réponse à l'appel d'offre
 
-Les limites d'une telle méthode, à vérifier, sont les temps mis pour réaliser les différents traitements. Nous n'avons pas parallélisé le travail et par surface brûlée, sur un poste personnel, nous mettions aux alentours d'une minute à réaliser le traitement de la stack et de deux à trois minutes pour réaliser les plots des séries temporelles et des cartes 2D de couleur des indices.
+## Délais de réponse 
 
-Il sera important de faire un test sur un système permettant la parallèlisation.
+La date limite de réception des offres est fixée au ** à remplir par l'OEIL **. L'offre sera addressée par voie électronique à l'adresse : hugo.roussaffa@oeil.nc et contact@oeil.nc (prévoir un accusé de réception). Les dossiers parvenus après la date et l'heure limite de réception des offres pourront ne pas être retenus.
 
-## Conclusion du Cahier des charges
+## Contacts
 
-Le Cahier des charges amène à estimer à 7 jours le temps de développement nécessaire pour intégrer les résultats de cette étude dans le système de l'OEIL.
+Toute demande de précision de quelque nature que ce soit sur la présente consultation se fera par mail.
 
-Pour autant, avant toute intégration, une étude statistique est conseillée pour réfléchir à des seuils pertinents pour les différents indicateurs et leurs utilisation. En outre la question de l'algorithme de classification se pose aussi. Le PoC réalisé semble montrer qu'un algorithme de type forêt aléatoire semble plutôt bien indiqué pour réaliser la classification des surfaces détectées par la chaîne des feux. Pour autant, c'est l'algorithme utilisé dans la chaîne des feux même et il serait potentiellement intéressant de réfléchir à un autre type d'algorithme pour cette classification afin de varier de méthode.
+- Pour les aspects fonctionnels : hugo.roussaffa@oeil.nc
+- Pour les aspects techniques : hugo.roussaffa@oeil.nc
 
-La partie étude statistique et reflexion sur un algorithme cible pour la classification n'est pas comptée dans les 7 jours de développement évoqués plus haut.
+Les réponses aux question pourront être diffusées à l'ensemble des postulants si cela est opportun.
 
-# Conclusion générale
+## Contenu de l'offre
 
-Nous pouvons conclure qu'au regard du PoC réalisé, plusieurs pistes intéressantes de réutilisation de divers indicateurs sont apparues, avec une clarification quant à la bancarisation de ces données. 
+Il est attendu pour la porposition des offres une proposition technnique et financière détaillée qui doit intégrer :
 
-Nous regrettons de n'avoir pas eu le temps de réfléchir à l'intégration de données exogènes (tel que celles d'un MOS à jour). Pour autant l'étude réalisée, bien que qualitative, donne des indications fortes pour la suite. 
+- La présentation de la structure répondant
+- Les CV de chaque intervenant
+- L'expérience passée 
+- Une méthodologie de travail et une réponse technique
+- Une ventilation des coûts
+- Un calendrier détaillé incluant les délais de livraison du code considéré
+- Tout autre élément jugé pertinent pour le présent appel d'offres
+
+## Critères de choix
+
+**à remplir par l'OEIL**
